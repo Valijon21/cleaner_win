@@ -12,12 +12,10 @@ from PyQt5.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QHeaderView,
-    QFrame,
-    QCheckBox,
 )
 from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QColor
 from cleanguard.core.contracts import ScanSummary, ScanItem, RiskLevel
-from cleanguard.ui.widgets.badges import RiskBadge
 from cleanguard.localization import tr
 from cleanguard.utils.formatting import format_bytes
 
@@ -90,11 +88,12 @@ class ResultsPage(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.itemChanged.connect(self._on_table_item_changed)
 
         layout.addWidget(self.table)
 
     def load_results(self, summary: ScanSummary, items: List[ScanItem]) -> None:
-        """Populate the table with discovered scan candidates."""
+        """Populate the table with discovered scan candidates using lightweight items."""
         self.current_summary = summary
         self.all_items = items
 
@@ -104,56 +103,60 @@ class ResultsPage(QWidget):
             f"{summary.safe_items} Safe, {summary.review_items} Review, {summary.blocked_items} Blocked"
         )
 
+        self.table.blockSignals(True)
         self.table.setRowCount(len(items))
 
         for row_idx, item in enumerate(items):
-            # Checkbox widget
-            chk = QCheckBox()
-            # Blocked items can NEVER be selected
+            # 0. Checkbox using native QTableWidgetItem
+            chk_item = QTableWidgetItem()
             if item.risk_level == RiskLevel.BLOCKED:
-                chk.setChecked(False)
-                chk.setEnabled(False)
+                chk_item.setFlags(Qt.ItemIsEnabled)
+                chk_item.setCheckState(Qt.Unchecked)
             else:
-                chk.setChecked(item.selected)
-                chk.stateChanged.connect(lambda state, it=item: self._on_checkbox_changed(it, state))
+                chk_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable)
+                chk_item.setCheckState(Qt.Checked if item.selected else Qt.Unchecked)
+            self.table.setItem(row_idx, 0, chk_item)
 
-            cell_chk = QWidget()
-            chk_layout = QHBoxLayout(cell_chk)
-            chk_layout.addWidget(chk)
-            chk_layout.setAlignment(Qt.AlignCenter)
-            chk_layout.setContentsMargins(0, 0, 0, 0)
-            self.table.setCellWidget(row_idx, 0, cell_chk)
-
-            # Category
-            cat_label = tr(f"category_{item.category}") if f"category_{item.category}" in tr(f"category_{item.category}") else item.category
+            # 1. Category
+            cat_key = f"category_{item.category}"
+            cat_label = tr(cat_key) if cat_key in tr(cat_key) else item.category
             self.table.setItem(row_idx, 1, QTableWidgetItem(cat_label))
 
-            # Item Name
+            # 2. Item Name
             self.table.setItem(row_idx, 2, QTableWidgetItem(item.name))
 
-            # Size
+            # 3. Size
             size_item = QTableWidgetItem(format_bytes(item.size))
             size_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.table.setItem(row_idx, 3, size_item)
 
-            # Risk Badge
-            badge = RiskBadge(item.risk_level)
-            cell_badge = QWidget()
-            badge_layout = QHBoxLayout(cell_badge)
-            badge_layout.addWidget(badge)
-            badge_layout.setAlignment(Qt.AlignCenter)
-            badge_layout.setContentsMargins(4, 2, 4, 2)
-            self.table.setCellWidget(row_idx, 4, cell_badge)
+            # 4. Safety Level (Colored badge text)
+            risk_text = tr(f"risk_{item.risk_level.value.lower()}")
+            risk_item = QTableWidgetItem(f" {risk_text} ")
+            risk_item.setTextAlignment(Qt.AlignCenter)
+            if item.risk_level == RiskLevel.SAFE:
+                risk_item.setForeground(QColor("#34D399"))
+            elif item.risk_level == RiskLevel.REVIEW:
+                risk_item.setForeground(QColor("#FBBF24"))
+            else:
+                risk_item.setForeground(QColor("#F87171"))
+            self.table.setItem(row_idx, 4, risk_item)
 
-            # Reason & Path
+            # 5. Reason & Path
             reason_text = f"{item.reason} — ({item.path})"
             self.table.setItem(row_idx, 5, QTableWidgetItem(reason_text))
 
+        self.table.blockSignals(False)
         self._update_clean_button_text()
 
-    def _on_checkbox_changed(self, item: ScanItem, state: int) -> None:
-        item.selected = (state == Qt.Checked)
-        self._update_clean_button_text()
+    def _on_table_item_changed(self, table_item: QTableWidgetItem) -> None:
+        if table_item.column() == 0:
+            row = table_item.row()
+            if 0 <= row < len(self.all_items):
+                item = self.all_items[row]
+                if item.risk_level != RiskLevel.BLOCKED:
+                    item.selected = (table_item.checkState() == Qt.Checked)
+                    self._update_clean_button_text()
 
     def _select_safe_only(self) -> None:
         for item in self.all_items:

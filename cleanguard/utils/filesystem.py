@@ -3,7 +3,6 @@ Filesystem utility functions and safe file operations.
 """
 
 import os
-import sys
 from typing import Optional, Tuple
 
 
@@ -39,14 +38,14 @@ def is_path_under_directory(child_path: str, parent_directory: str) -> bool:
     """
     norm_child = normalize_path(child_path)
     norm_parent = normalize_path(parent_directory)
-    
+
     if not norm_child or not norm_parent:
         return False
-        
+
     # Parent must end with separator to avoid partial folder name matches
     if not norm_parent.endswith(os.sep):
         norm_parent += os.sep
-        
+
     # Check common path or prefix
     return norm_child.startswith(norm_parent) or norm_child == norm_parent.rstrip(os.sep)
 

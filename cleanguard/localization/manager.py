@@ -5,7 +5,7 @@ Provides dynamic language switching across Uzbek, Russian, and English.
 
 import os
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 from cleanguard.core.config import ConfigManager
 from cleanguard.utils.logging import get_logger
 
@@ -34,15 +34,26 @@ class LocalizationManager:
         self.config = ConfigManager()
         self.current_lang = current_lang or self.config.get("language", "uz")
         self._strings: Dict[str, str] = {}
+        self._listeners = []
         self._load_language(self.current_lang)
         self._initialized = True
 
+    def register_listener(self, callback) -> None:
+        """Register a callback invoked when the UI language changes."""
+        if callback not in self._listeners:
+            self._listeners.append(callback)
+
     def set_language(self, lang_code: str) -> None:
-        """Switch active UI language."""
+        """Switch active UI language and notify listeners."""
         if lang_code in SUPPORTED_LANGUAGES:
             self.current_lang = lang_code
             self._load_language(lang_code)
             self.config.set("language", lang_code)
+            for cb in list(self._listeners):
+                try:
+                    cb(lang_code)
+                except Exception as exc:
+                    logger.warning(f"Error in language listener callback: {exc}")
 
     def _load_language(self, lang_code: str) -> None:
         base_dir = os.path.dirname(os.path.abspath(__file__))

@@ -33,7 +33,7 @@ def bootstrap_application() -> QApplication:
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     # 4. Initialize Database
-    db_mgr = DatabaseManager()
+    DatabaseManager()
 
     # 5. Initialize Configuration and Localization
     cfg = ConfigManager()

@@ -13,15 +13,15 @@ def format_bytes(bytes_count: Union[int, float], precision: int = 2) -> str:
     """
     if bytes_count < 0:
         return "0 B"
-    
+
     units = ["B", "KB", "MB", "GB", "TB", "PB"]
     size = float(bytes_count)
     unit_idx = 0
-    
+
     while size >= 1024.0 and unit_idx < len(units) - 1:
         size /= 1024.0
         unit_idx += 1
-        
+
     if unit_idx == 0:
         return f"{int(size)} B"
     return f"{size:.{precision}f} {units[unit_idx]}"

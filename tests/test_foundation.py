@@ -4,11 +4,10 @@ Unit tests for Foundation (Phase 0).
 
 import os
 import tempfile
-import pytest
 from cleanguard.app.version import APP_NAME, APP_VERSION, get_version_string
-from cleanguard.utils.formatting import format_bytes, format_duration, calculate_age_days
-from cleanguard.utils.filesystem import normalize_path, is_path_under_directory
-from cleanguard.core.contracts import RiskLevel, ErrorCode, ScanItem, DriveInfo
+from cleanguard.utils.formatting import format_bytes, format_duration
+from cleanguard.utils.filesystem import is_path_under_directory
+from cleanguard.core.contracts import RiskLevel, ScanItem
 from cleanguard.core.config import ConfigManager
 
 
@@ -37,7 +36,7 @@ def test_format_duration():
 def test_path_normalization_and_containment():
     base = tempfile.gettempdir()
     child = os.path.join(base, "cleanguard_test_sub", "file.txt")
-    
+
     assert is_path_under_directory(child, base) is True
     # Path outside
     outside = "C:\\SomeOtherFolder\\file.txt"

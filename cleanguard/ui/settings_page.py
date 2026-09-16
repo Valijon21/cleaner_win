@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import (
     QLabel,
     QComboBox,
     QCheckBox,
-    QPushButton,
     QFrame,
     QSpinBox,
 )

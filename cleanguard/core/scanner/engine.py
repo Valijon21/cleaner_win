@@ -6,7 +6,7 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Optional, Callable
-from cleanguard.core.scanner.base import BaseScanner, CancellationToken, ProgressCallback
+from cleanguard.core.scanner.base import BaseScanner, CancellationToken
 from cleanguard.core.scanner.temp_scanner import TempScanner
 from cleanguard.core.scanner.cache_scanner import CacheScanner
 from cleanguard.core.scanner.thumbnail_scanner import ThumbnailScanner

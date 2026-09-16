@@ -3,7 +3,6 @@ Cards and Data Visualizations UI Components.
 """
 
 from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QProgressBar
-from PyQt5.QtCore import Qt
 from cleanguard.core.contracts import DriveInfo
 from cleanguard.utils.formatting import format_bytes
 

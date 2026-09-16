@@ -29,7 +29,7 @@ from cleanguard.services.cleanup_service import CleanupWorker
 from cleanguard.core.contracts import ScanSummary, ScanItem, CleanupSummary
 from cleanguard.core.safety import SafetyEngine
 from cleanguard.database.db import DatabaseManager
-from cleanguard.localization import tr
+from cleanguard.localization import tr, get_localization
 from cleanguard.utils.formatting import format_bytes
 
 
@@ -133,7 +133,24 @@ class MainWindow(QMainWindow):
         self.page_results.cleanup_requested.connect(self._on_cleanup_requested)
         self.page_cleanup.done_clicked.connect(self._on_cleanup_done)
 
+        # Register live retranslation on language switch
+        get_localization().register_listener(self.retranslate_ui)
+
         self.navigate_to(0)
+
+    def retranslate_ui(self, lang_code: str = "") -> None:
+        """Update navigation labels dynamically when language changes."""
+        nav_titles = [
+            "📊 " + tr("nav_dashboard"),
+            "🔍 " + tr("nav_scan"),
+            "📋 " + tr("nav_results"),
+            "📜 " + tr("nav_history"),
+            "⚙️ " + tr("nav_settings"),
+            "ℹ️ " + tr("nav_about"),
+        ]
+        for idx, (btn, page_idx) in enumerate(self.nav_buttons):
+            if idx < len(nav_titles):
+                btn.setText(nav_titles[idx])
 
     def navigate_to(self, page_index: int) -> None:
         """Switch view and update navigation button state."""

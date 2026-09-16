@@ -4,7 +4,6 @@ Implements non-destructive Recycle Bin movement and safe file removal.
 """
 
 import os
-import sys
 import time
 from typing import Tuple
 from cleanguard.core.contracts import CleanupStrategy, ErrorCode

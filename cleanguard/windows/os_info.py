@@ -4,11 +4,10 @@ Strictly compatible with Windows 7 SP1 through Windows 11 and Python 3.8+.
 """
 
 import sys
-import os
 import platform
 import ctypes
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 
 class OSVersionInfoExW(ctypes.Structure):
@@ -95,7 +94,7 @@ def _get_native_architecture() -> str:
     """Query processor architecture using GetNativeSystemInfo."""
     if sys.platform != "win32":
         return platform.machine()
-    
+
     try:
         kernel32 = ctypes.windll.kernel32
         sys_info = SystemInfo()
@@ -112,7 +111,7 @@ def _get_native_architecture() -> str:
                 return "ARM"
     except Exception:
         pass
-    
+
     # Fallback
     m = platform.machine().lower()
     if "64" in m or "amd64" in m:
@@ -152,7 +151,7 @@ def get_windows_version() -> WindowsVersion:
 
     os_version = OSVersionInfoExW()
     os_version.dwOSVersionInfoSize = ctypes.sizeof(OSVersionInfoExW)
-    
+
     major = 0
     minor = 0
     build = 0

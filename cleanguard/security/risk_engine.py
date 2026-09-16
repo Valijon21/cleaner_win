@@ -4,7 +4,6 @@ Strictly evaluates file safety using multi-factor heuristics.
 """
 
 import os
-import time
 from typing import Tuple, List, Optional
 from cleanguard.core.contracts import RiskLevel, CleanCategory
 from cleanguard.security.protected_paths import ProtectedPathRegistry
@@ -45,6 +44,7 @@ class RiskEngine:
         size: int = 0,
         modified_at: float = 0.0,
         allowed_roots: Optional[List[str]] = None,
+        check_locks: bool = False,
     ) -> Tuple[RiskLevel, str, bool]:
         """
         Evaluate candidate file.
@@ -62,8 +62,8 @@ class RiskEngine:
         if not valid:
             return RiskLevel.BLOCKED, f"Blocked by Safety Guard: {reason}", False
 
-        # 2. Check if file is locked
-        if is_file_locked(path):
+        # 2. Check if file is locked (optional during scan, mandatory at cleanup gate)
+        if check_locks and is_file_locked(path):
             return RiskLevel.REVIEW, "File is locked by an active process.", False
 
         # 3. Check for Reparse Points / Junctions

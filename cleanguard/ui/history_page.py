@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
 )
+from PyQt5.QtGui import QColor
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
 from cleanguard.localization import tr
@@ -65,5 +66,5 @@ class HistoryPage(QWidget):
             self.table.setItem(row_idx, 3, QTableWidgetItem(format_number(entry["files_skipped"])))
 
             rec_item = QTableWidgetItem(format_bytes(entry["bytes_recovered"]))
-            rec_item.setForeground(Qt.green)
+            rec_item.setForeground(QColor("#10B981"))
             self.table.setItem(row_idx, 4, rec_item)

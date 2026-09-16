@@ -4,7 +4,6 @@ Unit and Integration tests for Cleanup Engine (Phase 7).
 
 import os
 import tempfile
-import pytest
 from cleanguard.core.contracts import (
     ScanItem,
     RiskLevel,
@@ -16,7 +15,6 @@ from cleanguard.core.contracts import (
 from cleanguard.core.cleaner.planner import CleanupPlanner
 from cleanguard.core.cleaner.executor import CleanupExecutor
 from cleanguard.core.safety import SafetyEngine
-from cleanguard.core.scanner.base import CancellationToken
 
 
 def test_cleanup_planner_filters_and_blocks():

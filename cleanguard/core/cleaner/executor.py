@@ -12,7 +12,6 @@ from cleanguard.core.contracts import (
     CleanupStatus,
     CleanupStrategy,
     ErrorCode,
-    RiskLevel,
 )
 from cleanguard.core.scanner.base import CancellationToken
 from cleanguard.core.safety import SafetyEngine

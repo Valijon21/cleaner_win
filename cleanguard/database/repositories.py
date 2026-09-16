@@ -4,9 +4,9 @@ Database Repositories for Scan, Cleanup, History and Statistics.
 
 import time
 import uuid
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from cleanguard.database.db import DatabaseManager
-from cleanguard.core.contracts import ScanSummary, CleanupSummary, CleanupItemResult
+from cleanguard.core.contracts import ScanSummary, CleanupSummary
 
 
 class HistoryRepository:

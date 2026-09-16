@@ -21,7 +21,7 @@ def get_default_log_dir() -> str:
     else:
         # Fallback to user home
         log_dir = os.path.join(os.path.expanduser("~"), ".cleanguard", "logs")
-    
+
     try:
         os.makedirs(log_dir, exist_ok=True)
     except OSError:

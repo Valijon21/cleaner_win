@@ -66,3 +66,26 @@ def test_main_window_instantiation(qapp, tmp_path):
 
     win.navigate_to(0)
     assert win.stack.currentIndex() == 0
+
+    # Test live retranslation via set_language
+    from cleanguard.localization import get_localization
+    get_localization().set_language("ru")
+    assert any("Панель" in btn.text() for btn, _ in win.nav_buttons)
+
+    get_localization().set_language("uz")
+    assert any("Boshqaruv" in btn.text() for btn, _ in win.nav_buttons)
+
+
+def test_results_page_table_loading(qapp):
+    from cleanguard.ui.results_page import ResultsPage
+    from cleanguard.core.contracts import ScanSummary, ScanItem, RiskLevel
+    page = ResultsPage()
+    summary = ScanSummary(items_found=2, bytes_reclaimable=2048, safe_items=1, review_items=1)
+    items = [
+        ScanItem("C:\\Temp\\a.tmp", "a.tmp", 1024, 100, "temp_files", RiskLevel.SAFE, "safe temp", "R1", selected=True),
+        ScanItem("C:\\Temp\\b.dmp", "b.dmp", 1024, 100, "crash_dumps", RiskLevel.REVIEW, "review dump", "R2", selected=False),
+    ]
+    page.load_results(summary, items)
+    assert page.table.rowCount() == 2
+    assert page.btn_clean.isEnabled() is True
+

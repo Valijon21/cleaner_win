@@ -6,7 +6,6 @@ import os
 from cleanguard.windows.known_folders import (
     get_known_folders,
     KnownFolders,
-    KnownFolderResolver,
 )
 from cleanguard.windows.recycle_bin import (
     query_recycle_bin,

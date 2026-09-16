@@ -4,7 +4,7 @@ Unit tests for Localization (Phase 13).
 
 import os
 import json
-from cleanguard.localization.manager import LocalizationManager, tr, SUPPORTED_LANGUAGES
+from cleanguard.localization.manager import LocalizationManager
 
 
 def test_all_language_files_exist_and_have_keys():

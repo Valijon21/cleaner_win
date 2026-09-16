@@ -4,11 +4,9 @@ Unit and Integration tests for Scanner Engine (Phase 5).
 
 import os
 import tempfile
-import pytest
 from cleanguard.core.scanner.base import CancellationToken, BaseScanner
-from cleanguard.core.scanner.temp_scanner import TempScanner
 from cleanguard.core.scanner.engine import ScannerEngine
-from cleanguard.core.contracts import CleanCategory, RiskLevel, ScanItem
+from cleanguard.core.contracts import CleanCategory
 from cleanguard.core.safety import SafetyEngine
 
 

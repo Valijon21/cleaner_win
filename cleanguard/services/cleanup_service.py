@@ -7,7 +7,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from cleanguard.core.cleaner.executor import CleanupExecutor
 from cleanguard.core.cleaner.planner import CleanupPlanner
 from cleanguard.core.scanner.base import CancellationToken
-from cleanguard.core.contracts import ScanItem, CleanupSummary, CleanupStrategy
+from cleanguard.core.contracts import ScanItem, CleanupStrategy
 from cleanguard.core.safety import SafetyEngine
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository

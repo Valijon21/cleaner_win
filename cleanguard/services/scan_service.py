@@ -2,12 +2,10 @@
 Scan Application Service: Background worker integrating ScannerEngine with UI signals.
 """
 
-from typing import List, Optional
+from typing import Optional
 from PyQt5.QtCore import QThread, pyqtSignal
 from cleanguard.core.scanner.engine import ScannerEngine
 from cleanguard.core.scanner.base import CancellationToken
-from cleanguard.core.contracts import ScanSummary, ScanItem
-from cleanguard.core.safety import SafetyEngine
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
 from cleanguard.utils.logging import get_logger

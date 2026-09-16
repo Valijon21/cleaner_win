@@ -6,7 +6,7 @@ Supports querying size/items, emptying, and recycling files with undo.
 import sys
 import ctypes
 from dataclasses import dataclass
-from typing import Optional, Dict
+from typing import Optional
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("recycle_bin")

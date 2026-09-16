@@ -71,6 +71,6 @@ class PathGuard:
                     break
 
             if not is_contained:
-                return False, ErrorCode.ACCESS_DENIED, f"Target is outside authorized cleanup root boundaries."
+                return False, ErrorCode.ACCESS_DENIED, "Target is outside authorized cleanup root boundaries."
 
         return True, ErrorCode.NONE, "Path validated successfully."

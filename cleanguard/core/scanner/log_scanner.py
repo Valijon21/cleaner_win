@@ -3,7 +3,7 @@ Log Scanner: Scans Windows error reports and diagnostic log files.
 """
 
 import os
-from typing import List, Optional, Set
+from typing import List, Optional
 from cleanguard.core.scanner.base import BaseScanner, CancellationToken, ProgressCallback
 from cleanguard.core.contracts import ScanItem, CleanCategory
 from cleanguard.windows.known_folders import get_known_folders

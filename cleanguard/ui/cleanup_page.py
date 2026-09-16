@@ -5,7 +5,6 @@ Cleanup Page: Progress indicator during cleanup, and completion celebration repo
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QHBoxLayout,
     QLabel,
     QProgressBar,
     QPushButton,

@@ -5,7 +5,7 @@ Application configuration management for CleanGuard.
 import os
 import json
 import threading
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 DEFAULT_CONFIG: Dict[str, Any] = {
     "language": "uz",  # Default language: Uzbek

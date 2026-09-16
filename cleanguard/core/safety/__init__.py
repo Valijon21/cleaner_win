@@ -4,7 +4,7 @@ The mandatory gateway for all scanning and deletion operations.
 """
 
 from typing import Tuple, List, Optional
-from cleanguard.core.contracts import RiskLevel, ErrorCode, CleanCategory
+from cleanguard.core.contracts import RiskLevel, ErrorCode
 from cleanguard.security.protected_paths import ProtectedPathRegistry
 from cleanguard.security.path_guard import PathGuard
 from cleanguard.security.risk_engine import RiskEngine
@@ -38,6 +38,7 @@ class SafetyEngine:
         size: int = 0,
         modified_at: float = 0.0,
         allowed_roots: Optional[List[str]] = None,
+        check_locks: bool = False,
     ) -> Tuple[RiskLevel, str, bool]:
         """Classify item during scanning."""
         return self.risk_engine.evaluate(
@@ -46,6 +47,7 @@ class SafetyEngine:
             size=size,
             modified_at=modified_at,
             allowed_roots=allowed_roots,
+            check_locks=check_locks,
         )
 
     def verify_cleanup_target(

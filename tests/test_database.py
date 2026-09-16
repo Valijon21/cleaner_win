@@ -4,7 +4,6 @@ Unit tests for Database and History Repository (Phase 10).
 
 import os
 import tempfile
-import pytest
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
 from cleanguard.core.contracts import (

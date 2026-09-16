@@ -8,8 +8,6 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QScrollArea,
-    QFrame,
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from cleanguard.windows.drives import enumerate_drives

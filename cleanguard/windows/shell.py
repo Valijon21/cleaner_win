@@ -5,7 +5,6 @@ Strictly compatible with Windows 7 SP1 through Windows 11.
 
 import sys
 import ctypes
-from typing import Tuple
 
 # Windows File Attributes
 FILE_ATTRIBUTE_READONLY = 0x00000001

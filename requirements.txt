@@ -1,0 +1,3 @@
+# CleanGuard Core Dependencies
+# Python 3.8+ compatibility baseline for Windows 7 SP1 - Windows 11
+PyQt5>=5.15.0,<5.16.0

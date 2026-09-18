@@ -157,6 +157,12 @@
   "autocare_enable": "Avtomatik fonda tozalashni yoqish",
   "autocare_weekly": "Har hafta (Yakshanba 12:00)",
   "autocare_daily": "Har kuni (12:00)",
-  "btn_test_clean": "Hozir sinab ko'rish"
+  "btn_test_clean": "Hozir sinab ko'rish",
+  "nav_network": "Internetni tezlashtirish",
+  "network_subtitle": "Tarmoq parametrlarini optimallashtirish, DNS keshini tozalash va kechikishni (Ping) pasaytirish",
+  "nav_registry": "Reestr tozalash",
+  "registry_subtitle": "Eskirgan va buzilgan reestr kalitlarini avtomatik zaxiralash bilan xavfsiz tozalash",
+  "nav_hardware": "Tizim va Apparat monitori",
+  "hardware_subtitle": "Protsessor, Tezkor xotira, Disklar va Video karta holatini real vaqtda nazorat qilish"
 }
 

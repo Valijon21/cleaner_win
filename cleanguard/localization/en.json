@@ -157,6 +157,12 @@
   "autocare_enable": "Enable automated background cleaning",
   "autocare_weekly": "Weekly (Sunday 12:00)",
   "autocare_daily": "Daily (12:00)",
-  "btn_test_clean": "Test Run Now"
+  "btn_test_clean": "Test Run Now",
+  "nav_network": "Internet Booster",
+  "network_subtitle": "Optimize network stack, flush DNS resolver cache, and minimize latency (Ping)",
+  "nav_registry": "Registry Cleaner",
+  "registry_subtitle": "Safely clean obsolete and broken registry entries with automated backup",
+  "nav_hardware": "Hardware Monitor",
+  "hardware_subtitle": "Real-time telemetry for CPU, RAM, Disks, and graphics hardware"
 }
 

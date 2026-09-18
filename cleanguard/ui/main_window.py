@@ -31,6 +31,9 @@ from cleanguard.ui.duplicates_page import DuplicatesPage
 from cleanguard.ui.turbo_page import TurboPage
 from cleanguard.ui.uninstaller_page import UninstallerPage
 from cleanguard.ui.tweaks_page import TweaksPage
+from cleanguard.ui.network_page import NetworkPage
+from cleanguard.ui.registry_page import RegistryPage
+from cleanguard.ui.hardware_page import HardwarePage
 from cleanguard.ui.tray import CleanGuardTrayIcon
 from cleanguard.services.scan_service import ScanWorker
 from cleanguard.services.cleanup_service import CleanupWorker
@@ -107,6 +110,9 @@ class MainWindow(QMainWindow):
             ("⚡ " + tr("nav_turbo"), 9),
             ("📦 " + tr("nav_uninstaller"), 10),
             ("🛠️ " + tr("nav_tweaks"), 11),
+            ("🌐 " + tr("nav_network"), 12),
+            ("🧩 " + tr("nav_registry"), 13),
+            ("📈 " + tr("nav_hardware"), 14),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
             ("ℹ️ " + tr("nav_about"), 6),
@@ -184,6 +190,9 @@ class MainWindow(QMainWindow):
         self.page_turbo = TurboPage()
         self.page_uninstaller = UninstallerPage()
         self.page_tweaks = TweaksPage()
+        self.page_network = NetworkPage()
+        self.page_registry = RegistryPage()
+        self.page_hardware = HardwarePage()
 
         self.stack.addWidget(self.page_dashboard)   # 0
         self.stack.addWidget(self.page_scan)        # 1
@@ -197,6 +206,9 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.page_turbo)       # 9
         self.stack.addWidget(self.page_uninstaller) # 10
         self.stack.addWidget(self.page_tweaks)      # 11
+        self.stack.addWidget(self.page_network)     # 12
+        self.stack.addWidget(self.page_registry)    # 13
+        self.stack.addWidget(self.page_hardware)    # 14
 
         shell_layout.addWidget(self.stack)
 
@@ -296,6 +308,9 @@ class MainWindow(QMainWindow):
             ("⚡ " + tr("nav_turbo"), 9),
             ("📦 " + tr("nav_uninstaller"), 10),
             ("🛠️ " + tr("nav_tweaks"), 11),
+            ("🌐 " + tr("nav_network"), 12),
+            ("🧩 " + tr("nav_registry"), 13),
+            ("📈 " + tr("nav_hardware"), 14),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
             ("ℹ️ " + tr("nav_about"), 6),
@@ -322,6 +337,12 @@ class MainWindow(QMainWindow):
         self.page_about.retranslate_ui()
         if hasattr(self, "page_tweaks"):
             self.page_tweaks.retranslate_ui(lang_code)
+        if hasattr(self, "page_network"):
+            self.page_network.retranslate_ui(lang_code)
+        if hasattr(self, "page_registry"):
+            self.page_registry.retranslate_ui(lang_code)
+        if hasattr(self, "page_hardware"):
+            self.page_hardware.retranslate_ui(lang_code)
 
     def _on_nav_button_clicked(self, page_index: int) -> None:
         """Handle sidebar navigation clicks, auto-starting scan if scan tab clicked."""

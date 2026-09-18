@@ -146,6 +146,11 @@
   "nav_startup": "Avto-yuklanish",
   "nav_duplicates": "Dublikat fayllar",
   "nav_turbo": "Tezlashtirish (Boost)",
-  "nav_privacy": "Maxfiylik (Privacy)"
+  "nav_privacy": "Maxfiylik (Privacy)",
+  "nav_uninstaller": "Dasturlar va qoldiqlar",
+  "uninstaller_subtitle": "O'rnatilgan dasturlarni to'liq o'chiring va qoldiqlarini tozalang",
+  "nav_tweaks": "Windows optimizatsiya",
+  "tweaks_subtitle": "Windows 10/11 standart ilovalarini (Bloatware) va telemetriya xizmatlarini boshqaring",
+  "search_placeholder": "Qidiruv..."
 }
 

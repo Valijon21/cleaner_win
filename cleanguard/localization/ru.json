@@ -146,6 +146,11 @@
   "nav_startup": "Автозагрузка",
   "nav_duplicates": "Дубликаты файлов",
   "nav_turbo": "Ускорение (Boost)",
-  "nav_privacy": "Приватность (Privacy)"
+  "nav_privacy": "Приватность (Privacy)",
+  "nav_uninstaller": "Деинсталлятор программ",
+  "uninstaller_subtitle": "Полное удаление установленных программ и очистка остаточных файлов",
+  "nav_tweaks": "Оптимизация Windows",
+  "tweaks_subtitle": "Удаление встроенных приложений Windows 10/11 и отключение телеметрии",
+  "search_placeholder": "Поиск..."
 }
 

@@ -96,7 +96,7 @@ class DuplicatesPage(QWidget):
 
         # Drive and Size Filter Bar
         filter_bar = QHBoxLayout()
-        self.lbl_drive = QLabel("Disk / Manzil:")
+        self.lbl_drive = QLabel(tr("lbl_drive_path", "Disk / Manzil:"))
         self.lbl_drive.setStyleSheet("color: #D1D5DB; font-weight: 600;")
         filter_bar.addWidget(self.lbl_drive)
 
@@ -106,15 +106,12 @@ class DuplicatesPage(QWidget):
             self.combo_drives.addItem(f"{d.letter} ({d.label or 'Mahalliy disk'})", d.letter + "\\")
         filter_bar.addWidget(self.combo_drives)
 
-        self.lbl_min_size = QLabel("Minimal hajm:")
+        self.lbl_min_size = QLabel(tr("lbl_min_size", "Minimal hajm:"))
         self.lbl_min_size.setStyleSheet("color: #D1D5DB; font-weight: 600; margin-left: 12px;")
         filter_bar.addWidget(self.lbl_min_size)
 
         self.combo_min_size = QComboBox()
-        self.combo_min_size.addItem("1 MB dan katta", 1024 * 1024)
-        self.combo_min_size.addItem("10 MB dan katta", 10 * 1024 * 1024)
-        self.combo_min_size.addItem("50 MB dan katta", 50 * 1024 * 1024)
-        self.combo_min_size.addItem("100 KB dan katta", 100 * 1024)
+        self._populate_min_sizes()
         filter_bar.addWidget(self.combo_min_size)
 
         filter_bar.addStretch()
@@ -154,12 +151,12 @@ class DuplicatesPage(QWidget):
         self.action_bar.addWidget(self.lbl_stats)
         self.action_bar.addStretch()
 
-        self.btn_keep_oldest = QPushButton("Eng eskisini saqlash")
+        self.btn_keep_oldest = QPushButton(tr("btn_keep_oldest", "Eng eskisini saqlash"))
         self.btn_keep_oldest.setCursor(Qt.PointingHandCursor)
         self.btn_keep_oldest.clicked.connect(lambda: self._apply_auto_selection("oldest"))
         self.action_bar.addWidget(self.btn_keep_oldest)
 
-        self.btn_keep_newest = QPushButton("Eng yangisini saqlash")
+        self.btn_keep_newest = QPushButton(tr("btn_keep_newest", "Eng yangisini saqlash"))
         self.btn_keep_newest.setCursor(Qt.PointingHandCursor)
         self.btn_keep_newest.clicked.connect(lambda: self._apply_auto_selection("newest"))
         self.action_bar.addWidget(self.btn_keep_newest)
@@ -181,8 +178,19 @@ class DuplicatesPage(QWidget):
         self.tree.header().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         layout.addWidget(self.tree)
 
+    def _populate_min_sizes(self) -> None:
+        cur_data = self.combo_min_size.currentData() if hasattr(self, "combo_min_size") and self.combo_min_size.count() > 0 else 1024 * 1024
+        self.combo_min_size.clear()
+        self.combo_min_size.addItem(tr("size_above_1mb", "1 MB dan katta"), 1024 * 1024)
+        self.combo_min_size.addItem(tr("size_above_10mb", "10 MB dan katta"), 10 * 1024 * 1024)
+        self.combo_min_size.addItem(tr("size_above_50mb", "50 MB dan katta"), 50 * 1024 * 1024)
+        self.combo_min_size.addItem(tr("size_above_100kb", "100 KB dan katta"), 100 * 1024)
+        idx = self.combo_min_size.findData(cur_data)
+        if idx >= 0:
+            self.combo_min_size.setCurrentIndex(idx)
+
     def _on_browse_folder(self) -> None:
-        folder = QFileDialog.getExistingDirectory(self, "Dublikatlarni qidirish uchun papkani tanlang")
+        folder = QFileDialog.getExistingDirectory(self, tr("btn_browse_folder", "Dublikatlarni qidirish uchun papkani tanlang"))
         if folder:
             self.combo_drives.insertItem(0, f"📁 {folder}", folder)
             self.combo_drives.setCurrentIndex(0)
@@ -190,7 +198,7 @@ class DuplicatesPage(QWidget):
     def _on_start_scan(self) -> None:
         target = self.combo_drives.currentData()
         if not target or not os.path.exists(target):
-            QMessageBox.warning(self, "Xato", "Tanlangan manzil mavjud emas.")
+            QMessageBox.warning(self, tr("msg_error_title", "Xato"), tr("msg_path_not_found", "Tanlangan manzil mavjud emas."))
             return
 
         min_size = self.combo_min_size.currentData()
@@ -267,14 +275,14 @@ class DuplicatesPage(QWidget):
                         selected_to_delete.append(it)
 
         if not selected_to_delete:
-            QMessageBox.information(self, "Ma'lumot", "O'chirish uchun birorta ham dublikat tanlanmagan.")
+            QMessageBox.information(self, tr("msg_info_title", "Ma'lumot"), tr("msg_duplicate_no_selection", "O'chirish uchun birorta ham dublikat tanlanmagan."))
             return
 
         tot_bytes = sum(it.size for it in selected_to_delete)
         reply = QMessageBox.question(
             self,
-            "Dublikatlarni o'chirishni tasdiqlang",
-            f"Haqiqatan ham tanlangan {len(selected_to_delete)} ta dublikat faylni ({format_bytes(tot_bytes)}) o'chirmoqchimisiz?\nBu amal qaytarilmaydi!",
+            tr("msg_confirm_title", "Tasdiqlash"),
+            tr("msg_duplicate_clean_confirm", count=len(selected_to_delete), size=format_bytes(tot_bytes)),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -291,7 +299,7 @@ class DuplicatesPage(QWidget):
                 except Exception as ex:
                     logger.error("Failed removing duplicate %s: %s", it.path, ex)
 
-            QMessageBox.information(self, "Muvaffaqiyatli", f"{deleted_count} ta dublikat fayl o'chirildi.")
+            QMessageBox.information(self, tr("msg_success_title", "Muvaffaqiyatli"), tr("msg_duplicate_clean_success", count=deleted_count))
             self._on_start_scan()
 
     def retranslate_ui(self, lang_code: str = "") -> None:
@@ -302,6 +310,9 @@ class DuplicatesPage(QWidget):
             self.lbl_drive.setText(tr("lbl_drive_path", "Disk / Manzil:"))
         if hasattr(self, "lbl_min_size"):
             self.lbl_min_size.setText(tr("lbl_min_size", "Minimal hajm:"))
+        self._populate_min_sizes()
+        self.btn_keep_oldest.setText(tr("btn_keep_oldest", "Eng eskisini saqlash"))
+        self.btn_keep_newest.setText(tr("btn_keep_newest", "Eng yangisini saqlash"))
         self.btn_start_scan.setText("  " + tr("btn_scan_duplicates", "🔍 Dublikatlarni qidirish") + "  ")
         self.btn_clean_duplicates.setText(tr("btn_clean_duplicates", "🗑️ Tanlangan dublikatlarni o'chirish"))
         self.tree.setHeaderLabels([

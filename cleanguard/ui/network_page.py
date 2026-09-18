@@ -170,10 +170,10 @@ class NetworkPage(QWidget):
     def _refresh_throttling_status(self) -> None:
         is_opt = NetworkOptimizer.is_throttling_disabled()
         if is_opt:
-            self.lbl_throttling_status.setText("✅ Tarmoq cheklovi o'chiq (Maksimal tezlik faol)")
+            self.lbl_throttling_status.setText(tr("network_throttling_disabled", "✅ Tarmoq cheklovi o'chiq (Maksimal tezlik faol)"))
             self.lbl_throttling_status.setStyleSheet("color: #34D399; font-size: 13px; font-weight: 600;")
         else:
-            self.lbl_throttling_status.setText("⚠️ Windows multimedia tarmoq throttlingi faol (Sekinlashuv mumkin)")
+            self.lbl_throttling_status.setText(tr("network_throttling_enabled", "⚠️ Windows multimedia tarmoq throttlingi faol (Sekinlashuv mumkin)"))
             self.lbl_throttling_status.setStyleSheet("color: #FBBF24; font-size: 13px;")
 
     def _refresh_adapters(self) -> None:
@@ -189,7 +189,7 @@ class NetworkPage(QWidget):
             self.table_adapters.setItem(row, 2, stat_item)
 
     def _run_ping_test(self) -> None:
-        self.lbl_ping_val.setText("O'lchanmoqda...")
+        self.lbl_ping_val.setText(tr("network_measuring", "O'lchanmoqda..."))
         self.btn_ping_test.setEnabled(False)
         self.ping_worker = PingWorker(self)
         self.ping_worker.finished.connect(self._on_ping_finished)
@@ -213,8 +213,8 @@ class NetworkPage(QWidget):
         if not is_user_admin():
             reply = QMessageBox.question(
                 self,
-                "Administrator huquqi",
-                "TCP/IP va tarmoq throttlingini optimallashtirish uchun Administrator huquqi talab qilinadi.\nCleanGuard ni Administrator rejimida qayta ishga tushirilsinmi?",
+                tr("msg_admin_required", "Administrator huquqi"),
+                tr("msg_admin_restart_prompt", "TCP/IP va tarmoq throttlingini optimallashtirish uchun Administrator huquqi talab qilinadi.\nCleanGuard ni Administrator rejimida qayta ishga tushirilsinmi?"),
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.Yes,
             )
@@ -226,9 +226,17 @@ class NetworkPage(QWidget):
         ok_th, msg_th = NetworkOptimizer.disable_network_throttling()
 
         if ok_tcp and ok_th:
-            QMessageBox.information(self, "Bajarildi", "Tarmoq muvaffaqiyatli tezlashtirildi!\n- TCP/IP Auto-Tuning va RSS yoqildi.\n- Windows tarmoq throttlingi o'chirildi.")
+            QMessageBox.information(
+                self,
+                tr("msg_success_title", "Bajarildi"),
+                tr("msg_network_boost_success", "Tarmoq muvaffaqiyatli tezlashtirildi!\n- TCP/IP Auto-Tuning va RSS yoqildi.\n- Windows tarmoq throttlingi o'chirildi."),
+            )
         else:
-            QMessageBox.warning(self, "Ogohlantirish", f"Optimizatsiyada ayrim xatoliklar:\n{msg_tcp}\n{msg_th}")
+            QMessageBox.warning(
+                self,
+                tr("msg_warning_title", "Ogohlantirish"),
+                tr("msg_network_boost_partial", f"Optimizatsiyada ayrim xatoliklar:\n{msg_tcp}\n{msg_th}", tcp=msg_tcp, th=msg_th),
+            )
 
         self._refresh_throttling_status()
         self._run_ping_test()
@@ -236,9 +244,9 @@ class NetworkPage(QWidget):
     def _on_flush_dns_clicked(self) -> None:
         ok, msg = NetworkOptimizer.flush_dns()
         if ok:
-            QMessageBox.information(self, "DNS Tozalandi", msg)
+            QMessageBox.information(self, tr("msg_success_title", "DNS Tozalandi"), tr("msg_dns_flushed", msg))
         else:
-            QMessageBox.warning(self, "Xatolik", msg)
+            QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), msg)
 
     def retranslate_ui(self, lang_code: str = "") -> None:
         self.lbl_title.setText("🚀 " + tr("nav_network", "Internet va Tarmoqni tezlashtirish"))
@@ -250,6 +258,7 @@ class NetworkPage(QWidget):
         self.btn_optimize.setText("🚀 " + tr("btn_boost_network", "Internetni tezlashtirish"))
         self.btn_flush_dns.setText("🧹 " + tr("btn_flush_dns", "DNS keshini tozalash"))
         self.lbl_adapters_header.setText("🌐 " + tr("network_adapters_title", "Faol tarmoq adapterlari:"))
+        self._refresh_throttling_status()
         self.table_adapters.setHorizontalHeaderLabels([
             tr("tbl_adapter_name", "Adapter nomi"),
             tr("tbl_ip_address", "IPv4 manzili"),

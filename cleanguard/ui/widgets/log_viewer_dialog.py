@@ -113,14 +113,14 @@ class LogViewerDialog(QDialog):
         top_bar = QHBoxLayout()
         top_bar.setSpacing(10)
 
-        lbl_title = QLabel("📋 Diagnostic Logs")
+        lbl_title = QLabel("📋 " + tr("log_viewer_title", "CleanGuard - Diagnostic Logs"))
         lbl_title.setStyleSheet("font-size: 16px; font-weight: 700; color: #10B981;")
         top_bar.addWidget(lbl_title)
 
         top_bar.addSpacing(15)
 
         # Filter Level
-        lbl_filter = QLabel("Level:")
+        lbl_filter = QLabel(tr("log_viewer_filter", "Level:"))
         top_bar.addWidget(lbl_filter)
         self.combo_level = QComboBox()
         self.combo_level.addItem("All (DEBUG+)", logging.DEBUG)
@@ -134,13 +134,13 @@ class LogViewerDialog(QDialog):
 
         # Search Query
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search in logs...")
+        self.search_input.setPlaceholderText("🔍 " + tr("log_viewer_search", "Search in logs..."))
         self.search_input.setClearButtonEnabled(True)
         self.search_input.textChanged.connect(self._on_search_changed)
         top_bar.addWidget(self.search_input)
 
         # Auto-scroll Checkbox
-        self.chk_autoscroll = QCheckBox("Auto-scroll")
+        self.chk_autoscroll = QCheckBox(tr("log_viewer_autoscroll", "Auto-scroll"))
         self.chk_autoscroll.setChecked(True)
         top_bar.addWidget(self.chk_autoscroll)
 
@@ -164,27 +164,27 @@ class LogViewerDialog(QDialog):
 
         bottom_bar.addStretch()
 
-        btn_folder = QPushButton("📂 Open Folder")
+        btn_folder = QPushButton("📂 " + tr("btn_open_logs_folder", "Open Folder"))
         btn_folder.setCursor(Qt.PointingHandCursor)
         btn_folder.clicked.connect(open_log_folder)
         bottom_bar.addWidget(btn_folder)
 
-        btn_copy = QPushButton("📋 Copy All")
+        btn_copy = QPushButton("📋 " + tr("log_viewer_btn_copy", "Copy All"))
         btn_copy.setCursor(Qt.PointingHandCursor)
         btn_copy.clicked.connect(self._on_copy_all)
         bottom_bar.addWidget(btn_copy)
 
-        btn_export = QPushButton("💾 Export...")
+        btn_export = QPushButton("💾 " + tr("btn_export_diagnostics", "Export..."))
         btn_export.setCursor(Qt.PointingHandCursor)
         btn_export.clicked.connect(self._on_export_file)
         bottom_bar.addWidget(btn_export)
 
-        btn_clear = QPushButton("🧹 Clear")
+        btn_clear = QPushButton("🧹 " + tr("log_viewer_btn_clear", "Clear"))
         btn_clear.setCursor(Qt.PointingHandCursor)
         btn_clear.clicked.connect(self._on_clear_logs)
         bottom_bar.addWidget(btn_clear)
 
-        btn_close = QPushButton("Close")
+        btn_close = QPushButton(tr("history_btn_close", "Close"))
         btn_close.setCursor(Qt.PointingHandCursor)
         btn_close.setStyleSheet("""
             QPushButton {
@@ -290,3 +290,13 @@ class LogViewerDialog(QDialog):
         self.text_logs.clear()
         self._last_rendered_count = 0
         self.lbl_status.setText("Entries: 0")
+
+    def reject(self) -> None:
+        if hasattr(self, "refresh_timer") and self.refresh_timer.isActive():
+            self.refresh_timer.stop()
+        super().reject()
+
+    def closeEvent(self, event) -> None:
+        if hasattr(self, "refresh_timer") and self.refresh_timer.isActive():
+            self.refresh_timer.stop()
+        super().closeEvent(event)

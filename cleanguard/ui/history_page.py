@@ -57,7 +57,14 @@ class SessionDetailDialog(QDialog):
         lbl_title.setStyleSheet("font-size: 16px; color: #10B981;")
         layout.addWidget(lbl_title)
 
-        lbl_sub = QLabel(f"Recovered: <b>{rec_str}</b> | Deleted: <b>{del_count}</b> | Skipped: <b>{skip_count}</b>")
+        lbl_sub = QLabel(
+            tr(
+                "history_sub_details",
+                recovered=rec_str,
+                deleted=del_count,
+                skipped=skip_count,
+            )
+        )
         lbl_sub.setStyleSheet("font-size: 13px; color: #9CA3AF;")
         layout.addWidget(lbl_sub)
 
@@ -96,7 +103,7 @@ class SessionDetailDialog(QDialog):
         layout.addWidget(self.table)
 
         # Close Button
-        btn_close = QPushButton("  Close  ")
+        btn_close = QPushButton(f"  {tr('history_btn_close')}  ")
         btn_close.setObjectName("SecondaryButton")
         btn_close.setCursor(Qt.PointingHandCursor)
         btn_close.clicked.connect(self.accept)
@@ -216,30 +223,30 @@ class HistoryPage(QWidget):
 
     def _export_csv(self) -> None:
         if not self._history_cache:
-            QMessageBox.information(self, "Export", tr("history_details_no_items"))
+            QMessageBox.information(self, tr("msg_info_title"), tr("history_details_no_items"))
             return
 
         path, _ = QFileDialog.getSaveFileName(
             self,
-            "Save History CSV",
+            tr("history_btn_export_csv"),
             "cleanguard_history.csv",
             "CSV Files (*.csv)",
         )
         if path:
             ok = export_history_to_csv(path, self._history_cache)
             if ok:
-                QMessageBox.information(self, "Export", tr("history_export_success", path=path))
+                QMessageBox.information(self, tr("msg_success_title"), tr("history_export_success", path=path))
             else:
-                QMessageBox.warning(self, "Export", "Failed to write CSV file.")
+                QMessageBox.warning(self, tr("msg_error_title"), tr("msg_export_failed"))
 
     def _export_json(self) -> None:
         if not self._history_cache:
-            QMessageBox.information(self, "Export", tr("history_details_no_items"))
+            QMessageBox.information(self, tr("msg_info_title"), tr("history_details_no_items"))
             return
 
         path, _ = QFileDialog.getSaveFileName(
             self,
-            "Save History JSON",
+            tr("history_btn_export_json"),
             "cleanguard_history.json",
             "JSON Files (*.json)",
         )
@@ -250,16 +257,6 @@ class HistoryPage(QWidget):
                 items_provider=self.history_repo.get_cleanup_items,
             )
             if ok:
-                QMessageBox.information(self, "Export", tr("history_export_success", path=path))
+                QMessageBox.information(self, tr("msg_success_title"), tr("history_export_success", path=path))
             else:
-                QMessageBox.warning(self, "Export", "Failed to write JSON file.")
-
-    def retranslate_ui(self, lang_code: str = "") -> None:
-        """Update strings when language changes."""
-        if lang_code:
-            get_localization().set_language(lang_code)
-        self.lbl_title.setText(tr("nav_history"))
-        self._update_table_headers()
-        self.btn_inspect.setText(f"  👁️ {tr('history_btn_inspect')}  ")
-        self.btn_csv.setText(f"  📥 {tr('history_btn_export_csv')}  ")
-        self.btn_json.setText(f"  📥 {tr('history_btn_export_json')}  ")
+                QMessageBox.warning(self, tr("msg_error_title"), tr("msg_export_failed"))

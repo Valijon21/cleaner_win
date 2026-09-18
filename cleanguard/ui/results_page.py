@@ -94,7 +94,8 @@ class ResultsPage(QWidget):
 
         # Search Bar
         self.txt_search = QLineEdit()
-        self.txt_search.setPlaceholderText("🔍  Search files or paths...")
+        self.txt_search.setClearButtonEnabled(True)
+        self.txt_search.setPlaceholderText("🔍  " + tr("search_placeholder_results", "Search files or paths..."))
         self.txt_search.setStyleSheet("""
             QLineEdit {
                 background-color: #1F2937;
@@ -122,14 +123,7 @@ class ResultsPage(QWidget):
                 color: #F9FAFB;
             }
         """)
-        self.combo_category.addItem("All Categories", "ALL")
-        self.combo_category.addItem(tr("category_temp_files"), "temp_files")
-        self.combo_category.addItem(tr("category_app_cache"), "app_cache")
-        self.combo_category.addItem(tr("category_browser_cache"), "browser_cache")
-        self.combo_category.addItem(tr("category_system_logs"), "system_logs")
-        self.combo_category.addItem(tr("category_crash_dumps"), "crash_dumps")
-        self.combo_category.addItem(tr("category_thumbnail_cache"), "thumbnail_cache")
-        self.combo_category.addItem(tr("category_recycle_bin"), "recycle_bin")
+        self._populate_category_combo()
         self.combo_category.currentIndexChanged.connect(self._on_category_filter_changed)
         toolbar.addWidget(self.combo_category)
 
@@ -144,10 +138,7 @@ class ResultsPage(QWidget):
                 color: #F9FAFB;
             }
         """)
-        self.combo_risk.addItem("All Risk Levels", "ALL")
-        self.combo_risk.addItem(tr("risk_safe"), "SAFE")
-        self.combo_risk.addItem(tr("risk_review"), "REVIEW")
-        self.combo_risk.addItem(tr("risk_blocked"), "BLOCKED")
+        self._populate_risk_combo()
         self.combo_risk.currentIndexChanged.connect(self._on_risk_filter_changed)
         toolbar.addWidget(self.combo_risk)
 
@@ -239,6 +230,36 @@ class ResultsPage(QWidget):
         self.health_banner.style().unpolish(self.health_banner)
         self.health_banner.style().polish(self.health_banner)
 
+    def _populate_category_combo(self) -> None:
+        cur_data = self.combo_category.currentData() if hasattr(self, "combo_category") and self.combo_category.count() > 0 else "ALL"
+        self.combo_category.blockSignals(True)
+        self.combo_category.clear()
+        self.combo_category.addItem(tr("filter_all_categories", "All Categories"), "ALL")
+        self.combo_category.addItem(tr("category_temp_files"), "temp_files")
+        self.combo_category.addItem(tr("category_app_cache"), "app_cache")
+        self.combo_category.addItem(tr("category_browser_cache"), "browser_cache")
+        self.combo_category.addItem(tr("category_system_logs"), "system_logs")
+        self.combo_category.addItem(tr("category_crash_dumps"), "crash_dumps")
+        self.combo_category.addItem(tr("category_thumbnail_cache"), "thumbnail_cache")
+        self.combo_category.addItem(tr("category_recycle_bin"), "recycle_bin")
+        idx = self.combo_category.findData(cur_data)
+        if idx >= 0:
+            self.combo_category.setCurrentIndex(idx)
+        self.combo_category.blockSignals(False)
+
+    def _populate_risk_combo(self) -> None:
+        cur_data = self.combo_risk.currentData() if hasattr(self, "combo_risk") and self.combo_risk.count() > 0 else "ALL"
+        self.combo_risk.blockSignals(True)
+        self.combo_risk.clear()
+        self.combo_risk.addItem(tr("filter_all_risk", "All Risk Levels"), "ALL")
+        self.combo_risk.addItem(tr("risk_safe"), "SAFE")
+        self.combo_risk.addItem(tr("risk_review"), "REVIEW")
+        self.combo_risk.addItem(tr("risk_blocked"), "BLOCKED")
+        idx = self.combo_risk.findData(cur_data)
+        if idx >= 0:
+            self.combo_risk.setCurrentIndex(idx)
+        self.combo_risk.blockSignals(False)
+
     def _on_category_filter_changed(self, index: int) -> None:
         cat = self.combo_category.itemData(index)
         self.model.filter_by_category(cat)
@@ -265,6 +286,9 @@ class ResultsPage(QWidget):
         self.lbl_title.setText(tr("nav_results"))
         self.btn_select_safe.setText(tr("btn_select_all_safe"))
         self.btn_clear.setText(tr("btn_clear_selection"))
+        self.txt_search.setPlaceholderText("🔍  " + tr("search_placeholder_results", "Search files or paths..."))
+        self._populate_category_combo()
+        self._populate_risk_combo()
 
         if self.current_summary:
             total_size_str = format_bytes(self.current_summary.bytes_reclaimable)

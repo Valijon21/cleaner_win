@@ -332,7 +332,10 @@ QCheckBox {
     spacing: 10px;
 }
 
-QCheckBox::indicator {
+QCheckBox::indicator,
+QTableView::indicator,
+QTableWidget::indicator,
+QTreeWidget::indicator {
     width: 18px;
     height: 18px;
     border-radius: 4px;
@@ -340,14 +343,179 @@ QCheckBox::indicator {
     background-color: #1F2937;
 }
 
-QCheckBox::indicator:hover {
-    border-color: #06B6D4;
+QCheckBox::indicator:hover,
+QTableView::indicator:hover,
+QTableWidget::indicator:hover,
+QTreeWidget::indicator:hover {
+    border-color: #10B981;
 }
 
-QCheckBox::indicator:checked {
-    background-color: #06B6D4;
-    border-color: #06B6D4;
+QCheckBox::indicator:checked,
+QTableView::indicator:checked,
+QTableWidget::indicator:checked,
+QTreeWidget::indicator:checked {
+    background-color: #10B981;
+    border-color: #10B981;
     image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+}
+
+/* Text Inputs (QLineEdit) */
+QLineEdit {
+    background-color: #1F2937;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: #F9FAFB;
+    font-size: 13px;
+    selection-background-color: #1E3A8A;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:hover {
+    border-color: #4B5563;
+}
+
+QLineEdit:focus {
+    border: 1px solid #10B981;
+    background-color: #1A2332;
+}
+
+QLineEdit:disabled {
+    background-color: #111827;
+    color: #6B7280;
+    border-color: #1F2937;
+}
+
+/* Dropdown Menus (QComboBox) */
+QComboBox {
+    background-color: #1F2937;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #F9FAFB;
+    font-size: 13px;
+    min-height: 22px;
+}
+
+QComboBox:hover {
+    border-color: #4B5563;
+}
+
+QComboBox:focus {
+    border: 1px solid #10B981;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 24px;
+    border-left: none;
+}
+
+QComboBox::down-arrow {
+    image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%239CA3AF' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    width: 10px;
+    height: 6px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #111827;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    color: #F9FAFB;
+    selection-background-color: #10B981;
+    selection-color: #FFFFFF;
+    outline: none;
+    padding: 4px;
+}
+
+/* SpinBox (QSpinBox) */
+QSpinBox {
+    background-color: #1F2937;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #F9FAFB;
+    font-size: 13px;
+}
+
+QSpinBox:hover {
+    border-color: #4B5563;
+}
+
+QSpinBox:focus {
+    border: 1px solid #10B981;
+}
+
+QSpinBox::up-button, QSpinBox::down-button {
+    background-color: #111827;
+    border: none;
+    width: 18px;
+}
+
+QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+    background-color: #374151;
+}
+
+/* Radio Buttons (QRadioButton) */
+QRadioButton {
+    color: #F9FAFB;
+    font-size: 13px;
+    spacing: 10px;
+}
+
+QRadioButton::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    border: 1px solid #4B5563;
+    background-color: #1F2937;
+}
+
+QRadioButton::indicator:hover {
+    border-color: #10B981;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #10B981;
+    border: 3px solid #1F2937;
+}
+
+/* Modal Dialogs & Message Boxes */
+QDialog, QMessageBox {
+    background-color: #111827;
+    color: #F9FAFB;
+}
+
+QMessageBox QLabel {
+    color: #F9FAFB;
+    font-size: 13px;
+}
+
+QMessageBox QPushButton {
+    background-color: #1F2937;
+    color: #F9FAFB;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 6px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 70px;
+}
+
+QMessageBox QPushButton:hover {
+    background-color: #283548;
+    border-color: #4B5563;
+}
+
+/* Tooltips */
+QToolTip {
+    background-color: #1F2937;
+    color: #F9FAFB;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
 }
 """
 

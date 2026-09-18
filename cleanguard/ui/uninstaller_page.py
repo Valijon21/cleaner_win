@@ -39,7 +39,7 @@ class LeftoversDialog(QDialog):
         self.app = app
         self.leftovers = leftovers
         self.safety_engine = SafetyEngine()
-        self.setWindowTitle(f"'{app.name}' — Qoldiq fayllar")
+        self.setWindowTitle(tr("leftovers_title", app=app.name))
         self.resize(700, 420)
         self.setStyleSheet("""
             QDialog {
@@ -55,17 +55,21 @@ class LeftoversDialog(QDialog):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(14)
 
-        lbl_header = QLabel(f"'{self.app.name}' dasturining diskdagi qoldiqlari:")
+        lbl_header = QLabel(tr("leftovers_header", app=self.app.name))
         lbl_header.setStyleSheet("font-size: 16px; font-weight: 700; color: #10B981;")
         layout.addWidget(lbl_header)
 
         tot_bytes = sum(it.size for it in self.leftovers)
-        lbl_info = QLabel(f"Topildi: {len(self.leftovers)} ta qoldiq katalog ({format_bytes(tot_bytes)})")
+        lbl_info = QLabel(tr("leftovers_found", count=len(self.leftovers), size=format_bytes(tot_bytes)))
         lbl_info.setStyleSheet("font-size: 13px; color: #9CA3AF;")
         layout.addWidget(lbl_info)
 
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Qoldiq yo'li", "Hajmi", "Xavfsizlik"])
+        self.tree.setHeaderLabels([
+            tr("leftovers_col_path", "Qoldiq yo'li"),
+            tr("leftovers_col_size", "Hajmi"),
+            tr("leftovers_col_safety", "Xavfsizlik"),
+        ])
         self.tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tree.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.tree.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -74,7 +78,7 @@ class LeftoversDialog(QDialog):
             item = QTreeWidgetItem(self.tree)
             item.setText(0, it.path)
             item.setText(1, format_bytes(it.size))
-            item.setText(2, "O'chirish xavfsiz")
+            item.setText(2, tr("leftovers_safe_to_delete", "O'chirish xavfsiz"))
             item.setCheckState(0, Qt.Checked)
             item.setData(0, Qt.UserRole, it)
 
@@ -83,11 +87,13 @@ class LeftoversDialog(QDialog):
         btn_row = QHBoxLayout()
         btn_row.addStretch()
 
-        self.btn_cancel = QPushButton("Yopish")
+        self.btn_cancel = QPushButton(tr("leftovers_btn_cancel", "Yopish"))
+        self.btn_cancel.setCursor(Qt.PointingHandCursor)
         self.btn_cancel.clicked.connect(self.reject)
         btn_row.addWidget(self.btn_cancel)
 
-        self.btn_clean = QPushButton("🗑️ Tanlangan qoldiqlarni tozalash")
+        self.btn_clean = QPushButton(tr("leftovers_btn_clean", "🗑️ Tanlangan qoldiqlarni tozalash"))
+        self.btn_clean.setCursor(Qt.PointingHandCursor)
         self.btn_clean.setStyleSheet("background-color: #EF4444; color: white; font-weight: 700; padding: 6px 14px; border-radius: 6px;")
         self.btn_clean.clicked.connect(self._on_clean)
         btn_row.addWidget(self.btn_clean)
@@ -96,13 +102,14 @@ class LeftoversDialog(QDialog):
 
     def _on_clean(self) -> None:
         deleted = 0
+        selected_count = 0
         root = self.tree.invisibleRootItem()
         for i in range(root.childCount()):
             child = root.child(i)
             if child.checkState(0) == Qt.Checked:
+                selected_count += 1
                 it = child.data(0, Qt.UserRole)
                 if it and os.path.exists(it.path):
-                    # Validate through SafetyEngine
                     if self.safety_engine.is_protected_path(it.path):
                         continue
                     try:
@@ -114,7 +121,11 @@ class LeftoversDialog(QDialog):
                     except Exception as ex:
                         logger.error("Failed cleaning leftover %s: %s", it.path, ex)
 
-        QMessageBox.information(self, "Tozalandi", f"{deleted} ta qoldiq muvaffaqiyatli tozalandi.")
+        if selected_count == 0:
+            QMessageBox.warning(self, tr("msg_warning_title"), tr("leftovers_no_selection"))
+            return
+
+        QMessageBox.information(self, tr("msg_success_title"), tr("leftovers_success_msg", count=deleted))
         self.accept()
 
 
@@ -156,11 +167,12 @@ class UninstallerPage(QWidget):
         # Search Bar & Count
         filter_row = QHBoxLayout()
         self.txt_search = QLineEdit()
+        self.txt_search.setClearButtonEnabled(True)
         self.txt_search.setPlaceholderText("🔍 " + tr("search_placeholder", "Dastur yoki noshir nomini qidiring..."))
         self.txt_search.textChanged.connect(self._apply_filter)
         filter_row.addWidget(self.txt_search)
 
-        self.lbl_count = QLabel("Jami: 0 ta dastur")
+        self.lbl_count = QLabel(f"Jami: 0 ta dastur")
         self.lbl_count.setStyleSheet("color: #9CA3AF; font-size: 13px; margin-left: 12px;")
         filter_row.addWidget(self.lbl_count)
         layout.addLayout(filter_row)
@@ -168,7 +180,13 @@ class UninstallerPage(QWidget):
         # Apps Table
         self.table = QTableWidget()
         self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Dastur nomi", "Noshir", "Versiya", "Hajmi", "Amallar"])
+        self.table.setHorizontalHeaderLabels([
+            tr("tbl_app_name", "Dastur nomi"),
+            tr("tbl_publisher", "Noshir"),
+            tr("tbl_version", "Versiya"),
+            tr("tbl_size", "Hajmi"),
+            tr("tbl_actions", "Amallar"),
+        ])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -226,12 +244,12 @@ class UninstallerPage(QWidget):
             cell_layout.setContentsMargins(4, 2, 4, 2)
             cell_layout.setSpacing(6)
 
-            btn_uninstall = QPushButton("O'chirish")
+            btn_uninstall = QPushButton(tr("tbl_btn_uninstall", "O'chirish"))
             btn_uninstall.setStyleSheet("background-color: #EF4444; color: white; border-radius: 4px; padding: 3px 8px; font-size: 11px;")
             btn_uninstall.setCursor(Qt.PointingHandCursor)
             btn_uninstall.clicked.connect(lambda _, app=a: self._on_uninstall_clicked(app))
 
-            btn_leftovers = QPushButton("Qoldiqlar")
+            btn_leftovers = QPushButton(tr("tbl_btn_leftovers", "Qoldiqlar"))
             btn_leftovers.setStyleSheet("background-color: #3B82F6; color: white; border-radius: 4px; padding: 3px 8px; font-size: 11px;")
             btn_leftovers.setCursor(Qt.PointingHandCursor)
             btn_leftovers.clicked.connect(lambda _, app=a: self._on_leftovers_clicked(app))
@@ -243,22 +261,34 @@ class UninstallerPage(QWidget):
     def _on_uninstall_clicked(self, app: InstalledApp) -> None:
         reply = QMessageBox.question(
             self,
-            "Dasturni o'chirish",
-            f"'{app.name}' dasturining rasmiy o'chiruvchisi (Uninstaller) ishga tushirilsinmi?",
+            tr("msg_confirm_title", "Dasturni o'chirish"),
+            tr("msg_uninstall_confirm", app=app.name),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.Yes,
         )
         if reply == QMessageBox.Yes:
             ok, msg = self.manager.launch_uninstall(app)
             if ok:
-                QMessageBox.information(self, "Bajarildi", f"{msg}\nO'chirish yakunlangach 'Qoldiqlar' tugmasi orqali qolgan kesh va ma'lumotlarni tozalashingiz mumkin.")
+                QMessageBox.information(
+                    self,
+                    tr("msg_success_title", "Bajarildi"),
+                    tr("msg_uninstall_success", msg=msg),
+                )
             else:
-                QMessageBox.warning(self, "Xato", f"Uninstaller ishga tushmadi: {msg}")
+                QMessageBox.warning(
+                    self,
+                    tr("msg_error_title", "Xato"),
+                    tr("msg_uninstall_fail", msg=msg),
+                )
 
     def _on_leftovers_clicked(self, app: InstalledApp) -> None:
         leftovers = self.manager.find_leftovers(app.name, app.publisher)
         if not leftovers:
-            QMessageBox.information(self, "Toza", f"'{app.name}' uchun hech qanday qoldiq papkalar topilmadi.")
+            QMessageBox.information(
+                self,
+                tr("msg_info_title", "Toza"),
+                tr("msg_no_leftovers", app=app.name),
+            )
             return
 
         dialog = LeftoversDialog(app, leftovers, parent=self)

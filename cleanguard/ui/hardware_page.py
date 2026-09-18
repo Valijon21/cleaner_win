@@ -82,9 +82,9 @@ class HardwarePage(QWidget):
         card_cpu.setStyleSheet("background-color: #1F2937; border: 1px solid #374151; border-radius: 10px; padding: 14px;")
         layout_cpu = QVBoxLayout(card_cpu)
         layout_cpu.setSpacing(6)
-        lbl_cpu_head = QLabel("⚡ " + tr("hw_cpu_load", "CPU Yuklamasi"))
-        lbl_cpu_head.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
-        layout_cpu.addWidget(lbl_cpu_head)
+        self.lbl_cpu_head = QLabel("⚡ " + tr("hw_cpu_load", "CPU Yuklamasi"))
+        self.lbl_cpu_head.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
+        layout_cpu.addWidget(self.lbl_cpu_head)
 
         self.lbl_cpu_val = QLabel("0%")
         self.lbl_cpu_val.setStyleSheet("font-size: 28px; font-weight: 800; color: #F9FAFB;")
@@ -100,7 +100,14 @@ class HardwarePage(QWidget):
         """)
         layout_cpu.addWidget(self.bar_cpu)
 
-        self.lbl_cpu_desc = QLabel(f"{self.specs.get('cpu_cores', 1)} yadro | {self.specs.get('cpu_mhz', 0)} MHz")
+        self.lbl_cpu_desc = QLabel(
+            tr(
+                "hw_cores_logical",
+                "{cores} ta mantiqiy yadro ({mhz} MHz)",
+                cores=self.specs.get("cpu_cores", 1),
+                mhz=self.specs.get("cpu_mhz", 0),
+            )
+        )
         self.lbl_cpu_desc.setStyleSheet("font-size: 11px; color: #9CA3AF;")
         layout_cpu.addWidget(self.lbl_cpu_desc)
         telemetry_row.addWidget(card_cpu)
@@ -110,9 +117,9 @@ class HardwarePage(QWidget):
         card_ram.setStyleSheet("background-color: #1F2937; border: 1px solid #374151; border-radius: 10px; padding: 14px;")
         layout_ram = QVBoxLayout(card_ram)
         layout_ram.setSpacing(6)
-        lbl_ram_head = QLabel("🧠 " + tr("hw_ram_load", "RAM Bandligi"))
-        lbl_ram_head.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
-        layout_ram.addWidget(lbl_ram_head)
+        self.lbl_ram_head = QLabel("🧠 " + tr("hw_ram_load", "RAM Bandligi"))
+        self.lbl_ram_head.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
+        layout_ram.addWidget(self.lbl_ram_head)
 
         self.lbl_ram_val = QLabel("0%")
         self.lbl_ram_val.setStyleSheet("font-size: 28px; font-weight: 800; color: #F9FAFB;")
@@ -138,15 +145,21 @@ class HardwarePage(QWidget):
         card_up.setStyleSheet("background-color: #1F2937; border: 1px solid #374151; border-radius: 10px; padding: 14px;")
         layout_up = QVBoxLayout(card_up)
         layout_up.setSpacing(6)
-        lbl_up_head = QLabel("⏱️ " + tr("hw_uptime", "Tizim ish vaqti"))
-        lbl_up_head.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
-        layout_up.addWidget(lbl_up_head)
+        self.lbl_up_head = QLabel("⏱️ " + tr("hw_uptime", "Tizim ish vaqti"))
+        self.lbl_up_head.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
+        layout_up.addWidget(self.lbl_up_head)
 
         self.lbl_uptime_val = QLabel("--")
         self.lbl_uptime_val.setStyleSheet("font-size: 22px; font-weight: 800; color: #F9FAFB;")
         layout_up.addWidget(self.lbl_uptime_val)
 
-        self.lbl_uptime_desc = QLabel(f"Disklar: {self.specs.get('drives_count', 1)} ta faol bo'lim")
+        self.lbl_uptime_desc = QLabel(
+            tr(
+                "hw_active_partitions",
+                "Disklar: {count} ta faol bo'lim",
+                count=self.specs.get("drives_count", 1),
+            )
+        )
         self.lbl_uptime_desc.setStyleSheet("font-size: 11px; color: #9CA3AF; margin-top: 14px;")
         layout_up.addWidget(self.lbl_uptime_desc)
         telemetry_row.addWidget(card_up)
@@ -159,25 +172,48 @@ class HardwarePage(QWidget):
         layout_specs = QVBoxLayout(card_specs)
         layout_specs.setSpacing(14)
 
-        lbl_specs_head = QLabel("📋 " + tr("hw_specs_title", "Apparat ta'minoti pasporti (System Specifications)"))
-        lbl_specs_head.setStyleSheet("font-size: 16px; font-weight: 700; color: #F9FAFB;")
-        layout_specs.addWidget(lbl_specs_head)
+        self.lbl_specs_head = QLabel("📋 " + tr("hw_specs_title", "Apparat ta'minoti pasporti (System Specifications)"))
+        self.lbl_specs_head.setStyleSheet("font-size: 16px; font-weight: 700; color: #F9FAFB;")
+        layout_specs.addWidget(self.lbl_specs_head)
 
         self.table_specs = QTableWidget()
         self.table_specs.setColumnCount(2)
-        self.table_specs.setHorizontalHeaderLabels(["Qurilma / Komponent", "Xususiyatlari"])
         self.table_specs.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table_specs.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table_specs.verticalHeader().setVisible(False)
         self.table_specs.setAlternatingRowColors(True)
+        self._populate_specs_table()
+
+        layout_specs.addWidget(self.table_specs)
+        layout.addWidget(card_specs)
+
+        scroll.setWidget(content)
+        outer_layout.addWidget(scroll)
+
+    def _populate_specs_table(self) -> None:
+        self.table_specs.setHorizontalHeaderLabels([
+            tr("tbl_device_component", "Qurilma / Komponent"),
+            tr("tbl_specs_value", "Xususiyatlari"),
+        ])
 
         specs_rows = [
-            ("🖥️ Protsessor (CPU)", self.specs.get("cpu_name", "--")),
-            ("⚙️ Yadro va chastota", f"{self.specs.get('cpu_cores', 1)} ta mantiqiy yadro ({self.specs.get('cpu_mhz', 0)} MHz)"),
-            ("🎮 Video karta (GPU)", ", ".join(self.specs.get("gpus", []))),
-            ("🗄️ Asosiy plata (Motherboard)", self.specs.get("motherboard", "--")),
-            ("🔧 BIOS versiyasi", self.specs.get("bios_version", "--")),
-            ("💻 Operatsion tizim", f"{self.specs.get('os_name', '--')} ({self.specs.get('os_arch', '')}) - Build {self.specs.get('os_build', '')}"),
+            (tr("hw_comp_cpu", "🖥️ Protsessor (CPU)"), self.specs.get("cpu_name", "--")),
+            (
+                tr("hw_comp_cores", "⚙️ Yadro va chastota"),
+                tr(
+                    "hw_cores_logical",
+                    "{cores} ta mantiqiy yadro ({mhz} MHz)",
+                    cores=self.specs.get("cpu_cores", 1),
+                    mhz=self.specs.get("cpu_mhz", 0),
+                ),
+            ),
+            (tr("hw_comp_gpu", "🎮 Video karta (GPU)"), ", ".join(self.specs.get("gpus", []))),
+            (tr("hw_comp_motherboard", "🗄️ Asosiy plata (Motherboard)"), self.specs.get("motherboard", "--")),
+            (tr("hw_comp_bios", "🔧 BIOS versiyasi"), self.specs.get("bios_version", "--")),
+            (
+                tr("hw_comp_os", "💻 Operatsion tizim"),
+                f"{self.specs.get('os_name', '--')} ({self.specs.get('os_arch', '')}) - Build {self.specs.get('os_build', '')}",
+            ),
         ]
 
         self.table_specs.setRowCount(len(specs_rows))
@@ -186,12 +222,6 @@ class HardwarePage(QWidget):
             it_desc = QTableWidgetItem(f"  {desc}")
             self.table_specs.setItem(row, 0, it_comp)
             self.table_specs.setItem(row, 1, it_desc)
-
-        layout_specs.addWidget(self.table_specs)
-        layout.addWidget(card_specs)
-
-        scroll.setWidget(content)
-        outer_layout.addWidget(scroll)
 
     def _update_live_metrics(self) -> None:
         """Fetch real-time metrics and update UI counters."""
@@ -207,7 +237,7 @@ class HardwarePage(QWidget):
         self.bar_ram.setValue(int(ram_pct))
         used_str = format_bytes(mem.get("used_bytes", 0))
         tot_str = format_bytes(mem.get("total_bytes", 0))
-        self.lbl_ram_desc.setText(f"Ishlatilmoqda: {used_str} / {tot_str}")
+        self.lbl_ram_desc.setText(f"{tr('drive_storage_used', 'Ishlatilmoqda')}: {used_str} / {tot_str}")
 
         # 3. Uptime
         uptime_sec = self.engine.get_system_uptime_seconds()
@@ -217,3 +247,23 @@ class HardwarePage(QWidget):
         self.lbl_title.setText("📊 " + tr("nav_hardware", "Tizim va Apparat ta'minoti monitori"))
         self.lbl_subtitle.setText(tr("hardware_subtitle", "Protsessor, Tezkor xotira, Disklar va Video karta holatini real vaqtda nazorat qilish"))
         self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
+        self.lbl_cpu_head.setText("⚡ " + tr("hw_cpu_load", "CPU Yuklamasi"))
+        self.lbl_ram_head.setText("🧠 " + tr("hw_ram_load", "RAM Bandligi"))
+        self.lbl_up_head.setText("⏱️ " + tr("hw_uptime", "Tizim ish vaqti"))
+        self.lbl_specs_head.setText("📋 " + tr("hw_specs_title", "Apparat ta'minoti pasporti (System Specifications)"))
+        self.lbl_cpu_desc.setText(
+            tr(
+                "hw_cores_logical",
+                "{cores} ta mantiqiy yadro ({mhz} MHz)",
+                cores=self.specs.get("cpu_cores", 1),
+                mhz=self.specs.get("cpu_mhz", 0),
+            )
+        )
+        self.lbl_uptime_desc.setText(
+            tr(
+                "hw_active_partitions",
+                "Disklar: {count} ta faol bo'lim",
+                count=self.specs.get("drives_count", 1),
+            )
+        )
+        self._populate_specs_table()

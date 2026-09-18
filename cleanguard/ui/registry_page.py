@@ -46,7 +46,7 @@ class RollbackDialog(QDialog):
     def __init__(self, cleaner: SafeRegistryCleaner, parent=None):
         super().__init__(parent)
         self.cleaner = cleaner
-        self.setWindowTitle("Reestr zaxirasini qaytarish (Rollback)")
+        self.setWindowTitle(tr("rollback_title", "Reestr zaxirasini qaytarish (Rollback)"))
         self.resize(550, 360)
         self.setStyleSheet("background-color: #111827; color: #F9FAFB;")
         self._init_ui()
@@ -56,27 +56,35 @@ class RollbackDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
-        lbl = QLabel("Mavjud reestr zaxira nusxalari (.reg):")
+        lbl = QLabel(tr("rollback_available_header", "Mavjud reestr zaxira nusxalari (.reg):"))
         lbl.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
         layout.addWidget(lbl)
 
         self.list_backups = QListWidget()
         self.list_backups.setStyleSheet("background-color: #1F2937; border: 1px solid #374151; border-radius: 6px; padding: 6px;")
         backups = self.cleaner.get_available_backups()
-        for b in backups:
-            item = QListWidgetItem(f"📄 {os.path.basename(b)}")
-            item.setData(Qt.UserRole, b)
-            self.list_backups.addItem(item)
+        if not backups:
+            item_empty = QListWidgetItem(tr("rollback_no_backups", "Hozircha hech qanday zaxira nusxasi mavjud emas."))
+            item_empty.setFlags(Qt.NoItemFlags)
+            self.list_backups.addItem(item_empty)
+        else:
+            for b in backups:
+                item = QListWidgetItem(f"📄 {os.path.basename(b)}")
+                item.setData(Qt.UserRole, b)
+                self.list_backups.addItem(item)
+        self.list_backups.itemDoubleClicked.connect(self._on_restore)
         layout.addWidget(self.list_backups)
 
         btn_row = QHBoxLayout()
         btn_row.addStretch()
 
-        btn_cancel = QPushButton("Bekor qilish")
+        btn_cancel = QPushButton(tr("rollback_btn_cancel", "Bekor qilish"))
+        btn_cancel.setCursor(Qt.PointingHandCursor)
         btn_cancel.clicked.connect(self.reject)
         btn_row.addWidget(btn_cancel)
 
-        btn_restore = QPushButton("⏪ Tanlangan nusxani tiklash")
+        btn_restore = QPushButton(tr("rollback_btn_restore", "⏪ Tanlangan nusxani tiklash"))
+        btn_restore.setCursor(Qt.PointingHandCursor)
         btn_restore.setStyleSheet("background-color: #10B981; color: white; font-weight: 700; padding: 6px 14px; border-radius: 6px;")
         btn_restore.clicked.connect(self._on_restore)
         btn_row.addWidget(btn_restore)
@@ -85,25 +93,29 @@ class RollbackDialog(QDialog):
 
     def _on_restore(self) -> None:
         cur_item = self.list_backups.currentItem()
-        if not cur_item:
-            QMessageBox.warning(self, "Tanlang", "Iltimos, tiklash uchun ro'yxatdan birorta zaxira faylini tanlang.")
+        if not cur_item or not cur_item.data(Qt.UserRole):
+            QMessageBox.warning(
+                self,
+                tr("msg_warning_title", "Tanlang"),
+                tr("rollback_select_warning", "Iltimos, tiklash uchun ro'yxatdan birorta zaxira faylini tanlang."),
+            )
             return
 
         b_path = cur_item.data(Qt.UserRole)
         reply = QMessageBox.question(
             self,
-            "Reestrni tiklash",
-            f"Haqiqatan ham '{os.path.basename(b_path)}' faylidagi ma'lumotlarni reestrga qaytarmoqchimisiz?",
+            tr("rollback_confirm_title", "Reestrni tiklash"),
+            tr("rollback_confirm_msg", file=os.path.basename(b_path)),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.Yes,
         )
         if reply == QMessageBox.Yes:
             ok, msg = self.cleaner.restore_backup(b_path)
             if ok:
-                QMessageBox.information(self, "Tiklandi", msg)
+                QMessageBox.information(self, tr("rollback_success_title", "Tiklandi"), msg)
                 self.accept()
             else:
-                QMessageBox.warning(self, "Xatolik", msg)
+                QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), msg)
 
 
 class RegistryPage(QWidget):
@@ -215,22 +227,28 @@ class RegistryPage(QWidget):
                 selected_issues.append(self.issues[row])
 
         if not selected_issues:
-            QMessageBox.information(self, "Tanlang", "Tozalash uchun birorta ham yozuv belgilanmagan.")
+            QMessageBox.information(
+                self,
+                tr("msg_info_title", "Tanlang"),
+                tr("msg_registry_clean_no_selection", "Tozalash uchun birorta ham yozuv belgilanmagan."),
+            )
             return
 
         reply = QMessageBox.question(
             self,
-            "Reestrni tozalash",
-            f"Tanlangan {len(selected_issues)} ta reestr kalitlari tozalanadi.\nOldin avtomatik .reg zaxira nusxasi olinadi.\nDavom etilsinmi?",
+            tr("msg_confirm_title", "Reestrni tozalash"),
+            tr("msg_registry_clean_confirm", count=len(selected_issues)),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.Yes,
         )
         if reply == QMessageBox.Yes:
             deleted, failed, backup_path = self.cleaner.clean_issues(selected_issues, backup=True)
-            msg = f"{deleted} ta reestr yozuvi muvaffaqiyatli tozalandi."
-            if backup_path:
-                msg += f"\nZaxira saqlandi: {os.path.basename(backup_path)}"
-            QMessageBox.information(self, "Bajarildi", msg)
+            msg = tr(
+                "msg_registry_clean_success",
+                deleted=deleted,
+                backup=os.path.basename(backup_path) if backup_path else "",
+            )
+            QMessageBox.information(self, tr("msg_success_title", "Bajarildi"), msg)
             self.start_scan()
 
     def _open_rollback_dialog(self) -> None:

@@ -89,12 +89,12 @@ class TweaksPage(QWidget):
         # Tab 1: Privacy Tweaks
         self.tab_privacy = QWidget()
         self._init_privacy_tab()
-        self.tabs.addTab(self.tab_privacy, "🛡️ Maxfiylik va Telemetriya (Privacy)")
+        self.tabs.addTab(self.tab_privacy, tr("tweaks_tab_privacy", "🛡️ Maxfiylik va Telemetriya (Privacy)"))
 
         # Tab 2: Bloatware Remover
         self.tab_bloatware = QWidget()
         self._init_bloatware_tab()
-        self.tabs.addTab(self.tab_bloatware, "📦 Standart UWP Ilovalar (Bloatware)")
+        self.tabs.addTab(self.tab_bloatware, tr("tweaks_tab_bloatware", "📦 Standart UWP Ilovalar (Bloatware)"))
 
         layout.addWidget(self.tabs)
 
@@ -205,8 +205,8 @@ class TweaksPage(QWidget):
         if tweak.requires_admin and not is_user_admin():
             reply = QMessageBox.question(
                 self,
-                "Administrator huquqi talab qilinadi",
-                f"'{tweak.name}' parametrini o'zgartirish uchun Administrator huquqi zarur.\nCleanGuard ni Administrator rejimida qayta ishga tushirilsinmi?",
+                tr("msg_admin_required", "Administrator huquqi talab qilinadi"),
+                tr("msg_admin_restart_prompt", f"'{tweak.name}' parametrini o'zgartirish uchun Administrator huquqi zarur.\nCleanGuard ni Administrator rejimida qayta ishga tushirilsinmi?"),
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.Yes,
             )
@@ -225,7 +225,7 @@ class TweaksPage(QWidget):
             chk.blockSignals(True)
             chk.setChecked(not enable)
             chk.blockSignals(False)
-            QMessageBox.warning(self, "Xatolik", f"Parametrni saqlashda xatolik yuz berdi:\n{msg}")
+            QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), f"{tr('msg_error_title', 'Xatolik')}:\n{msg}")
 
     def _refresh_bloatware_list(self) -> None:
         self.bloatware_apps = self.manager.get_bloatware_status()
@@ -278,26 +278,26 @@ class TweaksPage(QWidget):
     def _on_remove_bloatware_clicked(self, app: BloatwareApp) -> None:
         reply = QMessageBox.question(
             self,
-            "Ilovani o'chirish",
-            f"Haqiqatan ham '{app.name}' ({app.package_pattern}) ilovasini tizimdan butunlay o'chirmoqchimisiz?",
+            tr("msg_confirm_title", "Ilovani o'chirish"),
+            tr("msg_bloatware_remove_confirm", app=app.name, pkg=app.package_pattern),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.Yes,
         )
         if reply == QMessageBox.Yes:
             ok, msg = self.manager.remove_bloatware(app)
             if ok:
-                QMessageBox.information(self, "Muvaffaqiyatli", msg)
+                QMessageBox.information(self, tr("msg_success_title", "Muvaffaqiyatli"), msg)
                 self._refresh_bloatware_list()
             else:
-                QMessageBox.warning(self, "Xatolik", msg)
+                QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), msg)
 
     def retranslate_ui(self, lang_code: str = "") -> None:
         """Dynamically update labels on language switch."""
         self.lbl_title.setText("🛠️ " + tr("nav_tweaks", "Windows optimizatsiya va Maxfiylik"))
         self.lbl_subtitle.setText(tr("tweaks_subtitle", "Windows 10/11 standart ilovalarini (Bloatware) va telemetriya xizmatlarini boshqaring"))
         self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
-        self.tabs.setTabText(0, "🛡️ " + tr("tab_privacy", "Maxfiylik va Telemetriya (Privacy)"))
-        self.tabs.setTabText(1, "📦 " + tr("tab_bloatware", "Standart UWP Ilovalar (Bloatware)"))
+        self.tabs.setTabText(0, tr("tweaks_tab_privacy", "🛡️ Maxfiylik va Telemetriya (Privacy)"))
+        self.tabs.setTabText(1, tr("tweaks_tab_bloatware", "📦 Standart UWP Ilovalar (Bloatware)"))
         self.table_bloatware.setHorizontalHeaderLabels([
             tr("tbl_app_name", "Ilova nomi"),
             tr("tbl_category", "Kategoriya"),

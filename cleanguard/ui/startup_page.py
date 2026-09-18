@@ -79,12 +79,13 @@ class StartupPage(QWidget):
         # Search & Filter Controls
         filter_row = QHBoxLayout()
         self.txt_search = QLineEdit()
+        self.txt_search.setClearButtonEnabled(True)
         self.txt_search.setPlaceholderText("🔍 " + tr("search_placeholder", "Qidirish..."))
         self.txt_search.textChanged.connect(self._apply_filters)
         filter_row.addWidget(self.txt_search)
 
         self.combo_filter = QComboBox()
-        self.combo_filter.addItems(["Barchasi", "Faqat faollar", "Faqat o'chirilganlar", "Yuqori ta'sirlilar"])
+        self._populate_filters()
         self.combo_filter.currentIndexChanged.connect(self._apply_filters)
         filter_row.addWidget(self.combo_filter)
         layout.addLayout(filter_row)
@@ -217,11 +218,25 @@ class StartupPage(QWidget):
                 btn_toggle.clicked.connect(lambda _, item=it: self._on_toggle_clicked(item))
                 self.table.setCellWidget(row, 5, btn_toggle)
 
+    def _populate_filters(self) -> None:
+        cur_idx = self.combo_filter.currentIndex() if hasattr(self, "combo_filter") and self.combo_filter.count() > 0 else 0
+        self.combo_filter.blockSignals(True)
+        self.combo_filter.clear()
+        self.combo_filter.addItems([
+            tr("filter_all", "Barchasi"),
+            tr("filter_active_only", "Faqat faollar"),
+            tr("filter_disabled_only", "Faqat o'chirilganlar"),
+            tr("filter_high_impact_only", "Yuqori ta'sirlilar"),
+        ])
+        if 0 <= cur_idx < self.combo_filter.count():
+            self.combo_filter.setCurrentIndex(cur_idx)
+        self.combo_filter.blockSignals(False)
+
     def _on_toggle_clicked(self, item: StartupItem) -> None:
         new_state = not item.enabled
         success, msg = self.manager.set_startup_state(item, new_state)
         if not success:
-            QMessageBox.warning(self, "Xatolik", f"Holatni o'zgartirib bo'lmadi: {msg}")
+            QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), f"{tr('msg_error_title', 'Xatolik')}: {msg}")
         self.refresh_items()
 
     def retranslate_ui(self, lang_code: str = "") -> None:
@@ -229,6 +244,7 @@ class StartupPage(QWidget):
         self.lbl_subtitle.setText(tr("startup_subtitle", "Windows yuklanishini sekinlashtiruvchi keraksiz dasturlarni o'chiring"))
         self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
         self.txt_search.setPlaceholderText("🔍 " + tr("search_placeholder", "Qidirish..."))
+        self._populate_filters()
         if hasattr(self.card_total, "lbl_title"):
             self.card_total.lbl_title.setText(tr("startup_total", "Jami dasturlar"))
         if hasattr(self.card_enabled, "lbl_title"):

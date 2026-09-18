@@ -137,6 +137,7 @@ class SettingsPage(QWidget):
         self.lbl_age.setStyleSheet("font-size: 14px; color: #F9FAFB;")
         self.spin_age = QSpinBox()
         self.spin_age.setRange(0, 168)
+        self.spin_age.setSuffix(f" {tr('unit_hours', 'soat')}")
         self.spin_age.setValue(int(self.config.get("min_file_age_hours", 24)))
         self.spin_age.valueChanged.connect(
             lambda val: self.config.set("min_file_age_hours", val)
@@ -242,14 +243,7 @@ class SettingsPage(QWidget):
         level_row.addStretch()
 
         self.combo_log_level = QComboBox()
-        self.combo_log_level.addItem("DEBUG (Batafsil / Texnik)", logging.DEBUG)
-        self.combo_log_level.addItem("INFO (Standart)", logging.INFO)
-        self.combo_log_level.addItem("WARNING (Ogohlantirishlar)", logging.WARNING)
-        self.combo_log_level.addItem("ERROR (Faqat xatolar)", logging.ERROR)
-
-        current_lvl = get_current_log_level()
-        lvl_map = {logging.DEBUG: 0, logging.INFO: 1, logging.WARNING: 2, logging.ERROR: 3}
-        self.combo_log_level.setCurrentIndex(lvl_map.get(current_lvl, 1))
+        self._populate_log_levels()
         self.combo_log_level.currentIndexChanged.connect(self._on_log_level_changed)
         level_row.addWidget(self.combo_log_level)
         diag_layout.addLayout(level_row)
@@ -345,10 +339,23 @@ class SettingsPage(QWidget):
         dialog = LogViewerDialog(self)
         dialog.exec_()
 
+    def _populate_log_levels(self) -> None:
+        cur_lvl = self.combo_log_level.currentData() if hasattr(self, "combo_log_level") and self.combo_log_level.count() > 0 else get_current_log_level()
+        self.combo_log_level.blockSignals(True)
+        self.combo_log_level.clear()
+        self.combo_log_level.addItem(tr("log_level_debug", "DEBUG (Batafsil / Texnik)"), logging.DEBUG)
+        self.combo_log_level.addItem(tr("log_level_info", "INFO (Standart)"), logging.INFO)
+        self.combo_log_level.addItem(tr("log_level_warning", "WARNING (Ogohlantirishlar)"), logging.WARNING)
+        self.combo_log_level.addItem(tr("log_level_error", "ERROR (Faqat xatolar)"), logging.ERROR)
+        idx = self.combo_log_level.findData(cur_lvl)
+        if idx >= 0:
+            self.combo_log_level.setCurrentIndex(idx)
+        self.combo_log_level.blockSignals(False)
+
     def _on_export_diagnostic_package(self) -> None:
         save_path, _ = QFileDialog.getSaveFileName(
             self,
-            "Save Diagnostic Package",
+            tr("btn_export_diagnostics", "Save Diagnostic Package"),
             "cleanguard_diagnostic_report.zip",
             "Zip Archives (*.zip);;All Files (*)",
         )
@@ -363,8 +370,8 @@ class SettingsPage(QWidget):
             else:
                 QMessageBox.warning(
                     self,
-                    "Export Failed",
-                    f"Could not generate diagnostic package at {save_path}",
+                    tr("msg_error_title", "Export Failed"),
+                    tr("msg_export_failed", f"Could not generate diagnostic package at {save_path}"),
                 )
 
     def _reload_protected_list(self) -> None:
@@ -425,9 +432,12 @@ class SettingsPage(QWidget):
         self.lbl_auto_desc.setText(tr("autocare_desc", "Windows Task Scheduler orqali kompyuterni muntazam fonda xavfsiz tozalash."))
         self.chk_autocare.setText(tr("autocare_enable", "Avtomatik fonda tozalashni yoqish"))
         self.btn_test_autocare.setText("⚡ " + tr("btn_test_clean", "Hozir sinab ko'rish"))
+        self.spin_age.setSuffix(f" {tr('unit_hours', 'soat')}")
+        self._populate_log_levels()
         if hasattr(self, "combo_schedule") and self.combo_schedule.count() >= 2:
             self.combo_schedule.setItemText(0, tr("autocare_weekly", "Har hafta (Yakshanba 12:00)"))
             self.combo_schedule.setItemText(1, tr("autocare_daily", "Har kuni (12:00)"))
+        self._refresh_autocare_status()
 
     def _refresh_autocare_status(self) -> None:
         try:
@@ -439,10 +449,10 @@ class SettingsPage(QWidget):
         self.chk_autocare.setChecked(is_sched)
         self.chk_autocare.blockSignals(False)
         if is_sched:
-            self.lbl_autocare_status.setText(f"Holat: Faol ({info})")
+            self.lbl_autocare_status.setText(tr("autocare_status_active", f"Holat: Faol ({info})", info=info))
             self.lbl_autocare_status.setStyleSheet("color: #10B981; font-size: 12px; font-weight: 600;")
         else:
-            self.lbl_autocare_status.setText("Holat: O'chiq")
+            self.lbl_autocare_status.setText(tr("autocare_status_disabled", "Holat: O'chiq"))
             self.lbl_autocare_status.setStyleSheet("color: #9CA3AF; font-size: 12px;")
 
     def _on_autocare_toggled(self, checked: bool) -> None:
@@ -454,11 +464,11 @@ class SettingsPage(QWidget):
                 self.chk_autocare.blockSignals(True)
                 self.chk_autocare.setChecked(False)
                 self.chk_autocare.blockSignals(False)
-                QMessageBox.warning(self, "Xatolik", msg)
+                QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), msg)
         else:
             ok, msg = AutoCareScheduler.disable_schedule()
             if not ok:
-                QMessageBox.warning(self, "Xatolik", msg)
+                QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), msg)
         self._refresh_autocare_status()
 
     def _on_autocare_schedule_changed(self) -> None:
@@ -470,9 +480,9 @@ class SettingsPage(QWidget):
             files, recovered = AutoCareScheduler.run_auto_clean_now()
             QMessageBox.information(
                 self,
-                "Auto-Care sinovi",
-                f"Sinov muvaffaqiyatli yakunlandi!\nO'chirilgan fayllar: {files} ta\nBo'shatilgan joy: {format_bytes(recovered)}",
+                tr("msg_info_title", "Auto-Care sinovi"),
+                tr("msg_autocare_test_success", f"Sinov muvaffaqiyatli yakunlandi!\nO'chirilgan fayllar: {files} ta\nBo'shatilgan joy: {format_bytes(recovered)}", files=files, recovered=format_bytes(recovered)),
             )
         except Exception as ex:
-            QMessageBox.warning(self, "Xatolik", f"Auto-Care sinovida xatolik: {ex}")
+            QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), f"{tr('msg_error_title', 'Xatolik')}: {ex}")
 

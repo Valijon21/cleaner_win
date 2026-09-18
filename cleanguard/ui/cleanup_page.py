@@ -52,11 +52,11 @@ class CleanupPage(QWidget):
         self.prog_bar.setFixedHeight(12)
         self.card_layout.addWidget(self.prog_bar)
 
-        self.lbl_current_path = QLabel("Starting safety verification...")
+        self.lbl_current_path = QLabel(tr("cleanup_starting", "Starting safety verification..."))
         self.lbl_current_path.setStyleSheet("color: #9CA3AF; font-size: 12px;")
         self.card_layout.addWidget(self.lbl_current_path)
 
-        self.lbl_recovered = QLabel("Space recovered: 0 B")
+        self.lbl_recovered = QLabel(tr("cleanup_space_recovered", "Space recovered: 0 B", size="0 B"))
         self.lbl_recovered.setStyleSheet("color: #10B981; font-weight: 700; font-size: 15px;")
         self.card_layout.addWidget(self.lbl_recovered)
 
@@ -87,8 +87,8 @@ class CleanupPage(QWidget):
         self.lbl_status.setText(tr("status_cleaning"))
         self.lbl_status.setStyleSheet("font-size: 18px; font-weight: 600; color: #10B981;")
         self.prog_bar.setValue(0)
-        self.lbl_current_path.setText("Starting safety verification...")
-        self.lbl_recovered.setText("Space recovered: 0 B")
+        self.lbl_current_path.setText(tr("cleanup_starting", "Starting safety verification..."))
+        self.lbl_recovered.setText(tr("cleanup_space_recovered", "Space recovered: 0 B", size="0 B"))
         self.btn_cancel.setEnabled(True)
         self.btn_cancel.setVisible(True)
         self.btn_done.setVisible(False)
@@ -97,9 +97,17 @@ class CleanupPage(QWidget):
         """Update progress bar and status without GUI lag."""
         pct = int((processed / max(1, total)) * 100)
         self.prog_bar.setValue(pct)
-        self.lbl_recovered.setText(f"Space recovered: {format_bytes(recovered)}")
+        self.lbl_recovered.setText(tr("cleanup_space_recovered", "Space recovered: {size}", size=format_bytes(recovered)))
         display_path = ("..." + cur_path[-80:]) if len(cur_path) > 83 else cur_path
-        self.lbl_current_path.setText(f"Processing ({processed}/{total}): {display_path}")
+        self.lbl_current_path.setText(
+            tr(
+                "cleanup_processing",
+                "Processing ({processed}/{total}): {path}",
+                processed=processed,
+                total=total,
+                path=display_path,
+            )
+        )
 
     def show_completion(self, summary: CleanupSummary) -> None:
         """Display successful completion metrics."""
@@ -124,7 +132,7 @@ class CleanupPage(QWidget):
 
     def _on_cancel(self) -> None:
         self.btn_cancel.setEnabled(False)
-        self.lbl_status.setText("Cancelling cleanup safely...")
+        self.lbl_status.setText(tr("cleanup_cancelling", "Cancelling cleanup safely..."))
         self.cancel_clicked.emit()
 
     def retranslate_ui(self) -> None:

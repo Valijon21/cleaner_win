@@ -293,6 +293,20 @@
   "hw_comp_gpu": "🎮 Video karta (GPU)",
   "hw_comp_motherboard": "🗄️ Asosiy plata (Motherboard)",
   "hw_comp_bios": "🔧 BIOS versiyasi",
-  "hw_comp_os": "💻 Operatsion tizim"
+  "hw_comp_os": "💻 Operatsion tizim",
+  "drive_local_disk": "Mahalliy disk",
+  "pipeline_section_header": "SKANERLASH BOSQICHLARI",
+  "module_items_count": "{count} ta • {size}",
+  "cleanup_starting": "Xavfsizlik tekshiruvi boshlanmoqda...",
+  "cleanup_space_recovered": "Bo'shatilgan joy: {size}",
+  "cleanup_processing": "Tozalanmoqda ({processed}/{total}): {path}",
+  "cleanup_cancelling": "Tozalash xavfsiz bekor qilinmoqda...",
+  "turbo_flushing": "⏳ Xotira optimallashtirilmoqda...",
+  "turbo_mode_work_label": "Ish rejimi",
+  "turbo_mode_game_label": "O'yin rejimi",
+  "turbo_feedback_freed": "🎉 {mode}: {count} ta jarayon optimallashtirildi, {size} RAM bo'shatildi!",
+  "turbo_feedback_optimized": "✅ {mode}: Barcha jarayonlar ishchi to'plami optimallashtirildi.",
+  "about_description": "CleanGuard — bu Windows tizimini xavfsiz tozalash va xotirani optimallashtirish dasturi.\nFoydalanuvchi shaxsiy hujjatlari va tizim yaxlitligini 100% saqlash kafolatlanadi.",
+  "about_supported_os": "Qo'llab-quvvatlanadigan operatsion tizimlar:"
 }
 

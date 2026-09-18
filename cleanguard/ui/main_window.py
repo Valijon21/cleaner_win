@@ -370,6 +370,9 @@ class MainWindow(QMainWindow):
             if idx < len(nav_titles):
                 btn.setText(nav_titles[idx][0])
 
+        for lbl_sec, sec_key, sec_default in self.nav_section_labels:
+            lbl_sec.setText(tr(sec_key, sec_default))
+
         if self.btn_elevation:
             self.btn_elevation.setText("🛡️ " + tr("btn_restart_admin"))
         if self.lbl_admin_badge:

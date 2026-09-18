@@ -43,7 +43,7 @@ class ModuleStageCard(QFrame):
 
         layout.addStretch()
 
-        self.lbl_stats = QLabel("0 ta • 0 B")
+        self.lbl_stats = QLabel(tr("module_items_count", "0 ta • 0 B", count="0", size="0 B"))
         self.lbl_stats.setStyleSheet("font-size: 12px; color: #9CA3AF; font-weight: 500; background: transparent;")
         layout.addWidget(self.lbl_stats)
 
@@ -60,7 +60,14 @@ class ModuleStageCard(QFrame):
 
     def set_status(self, status: str, count: int = 0, bytes_val: int = 0) -> None:
         if count > 0 or bytes_val > 0:
-            self.lbl_stats.setText(f"{format_number(count)} ta • {format_bytes(bytes_val)}")
+            self.lbl_stats.setText(
+                tr(
+                    "module_items_count",
+                    "{count} ta • {size}",
+                    count=format_number(count),
+                    size=format_bytes(bytes_val),
+                )
+            )
 
         if status == "queued":
             self.lbl_badge.setText(f" ⏳ {tr('module_status_queued')} ")
@@ -188,7 +195,7 @@ class ScanPage(QWidget):
         layout.addWidget(card)
 
         # Pipeline Header
-        self.lbl_pipeline_title = QLabel("ASC LIVE PIPELINE")
+        self.lbl_pipeline_title = QLabel(tr("pipeline_section_header", "SKANERLASH BOSQICHLARI"))
         self.lbl_pipeline_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #9CA3AF; letter-spacing: 1px;")
         layout.addWidget(self.lbl_pipeline_title)
 
@@ -300,6 +307,7 @@ class ScanPage(QWidget):
         """Dynamic translation updates on language switch."""
         self.lbl_title.setText(tr("nav_scan"))
         self.btn_cancel.setText(f"  {tr('btn_cancel')}  ")
+        self.lbl_pipeline_title.setText(tr("pipeline_section_header", "SKANERLASH BOSQICHLARI"))
 
         for cat_id, _, title_key in self.CATEGORIES_CONFIG:
             if cat_id in self.stage_cards:

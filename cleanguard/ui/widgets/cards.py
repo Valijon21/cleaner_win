@@ -54,7 +54,8 @@ class DriveCard(QFrame):
 
         # Header Row: Drive Letter + Label + System Tag
         top_row = QHBoxLayout()
-        drive_title = f"{drive.letter} ({drive.label or 'Local Disk'})"
+        local_disk_text = tr("drive_local_disk", "Local Disk")
+        drive_title = f"{drive.letter} ({drive.label or local_disk_text})"
         self.lbl_title = QLabel(drive_title)
         self.lbl_title.setStyleSheet("font-size: 15px; font-weight: 600; color: #F9FAFB;")
         top_row.addWidget(self.lbl_title)
@@ -62,7 +63,7 @@ class DriveCard(QFrame):
         top_row.addStretch()
 
         if drive.is_system_drive:
-            sys_tag = QLabel(" SYSTEM ")
+            sys_tag = QLabel(f" {tr('lbl_system', 'SYSTEM')} ")
             sys_tag.setStyleSheet("""
                 background-color: #1E3A8A;
                 color: #60A5FA;
@@ -105,10 +106,10 @@ class DriveCard(QFrame):
         stats_row = QHBoxLayout()
         free_str = format_bytes(drive.free_bytes)
         tot_str = format_bytes(drive.total_bytes)
-        self.lbl_stats = QLabel(f"{free_str} free of {tot_str}")
+        self.lbl_stats = QLabel(tr("lbl_free_of", "{free} free of {total}", free=free_str, total=tot_str))
         self.lbl_stats.setStyleSheet("color: #9CA3AF; font-size: 12px;")
 
-        self.lbl_pct = QLabel(f"{used_pct}% used")
+        self.lbl_pct = QLabel(tr("lbl_used_pct", "{pct}% used", pct=used_pct))
         self.lbl_pct.setStyleSheet("color: #9CA3AF; font-size: 12px; font-weight: 500;")
 
         stats_row.addWidget(self.lbl_stats)

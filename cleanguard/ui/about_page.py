@@ -41,20 +41,23 @@ class AboutPage(QWidget):
         lbl_build = QLabel(f"Build: {BUILD_NUMBER} • Target Python 3.8+ Baseline")
         lbl_build.setStyleSheet("color: #9CA3AF; font-size: 13px;")
 
-        lbl_desc = QLabel(
-            "CleanGuard is a safety-first Windows cleanup and storage optimization utility.\n"
-            "Engineered with strict non-bypassable safety gates to ensure zero loss of user documents\n"
-            "or Windows system integrity."
+        self.lbl_desc = QLabel(
+            tr(
+                "about_description",
+                "CleanGuard is a safety-first Windows cleanup and storage optimization utility.\n"
+                "Engineered with strict non-bypassable safety gates to ensure zero loss of user documents\n"
+                "or Windows system integrity.",
+            )
         )
-        lbl_desc.setStyleSheet("color: #D1D5DB; font-size: 14px; line-height: 1.5;")
+        self.lbl_desc.setStyleSheet("color: #D1D5DB; font-size: 14px; line-height: 1.5;")
 
-        lbl_os_header = QLabel("Supported Operating Systems:")
-        lbl_os_header.setStyleSheet("font-weight: 600; color: #F9FAFB; margin-top: 10px;")
+        self.lbl_os_header = QLabel(tr("about_supported_os", "Supported Operating Systems:"))
+        self.lbl_os_header.setStyleSheet("font-weight: 600; color: #F9FAFB; margin-top: 10px;")
 
         card_layout.addWidget(lbl_name)
         card_layout.addWidget(lbl_build)
-        card_layout.addWidget(lbl_desc)
-        card_layout.addWidget(lbl_os_header)
+        card_layout.addWidget(self.lbl_desc)
+        card_layout.addWidget(self.lbl_os_header)
 
         for os_name in SUPPORTED_OS_LIST:
             lbl_os = QLabel(f"  ✓  {os_name}")
@@ -70,4 +73,13 @@ class AboutPage(QWidget):
 
     def retranslate_ui(self) -> None:
         self.lbl_title.setText(tr("nav_about"))
+        self.lbl_desc.setText(
+            tr(
+                "about_description",
+                "CleanGuard is a safety-first Windows cleanup and storage optimization utility.\n"
+                "Engineered with strict non-bypassable safety gates to ensure zero loss of user documents\n"
+                "or Windows system integrity.",
+            )
+        )
+        self.lbl_os_header.setText(tr("about_supported_os", "Supported Operating Systems:"))
 

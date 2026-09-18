@@ -293,6 +293,20 @@
   "hw_comp_gpu": "🎮 Видеокарта (GPU)",
   "hw_comp_motherboard": "🗄️ Материнская плата",
   "hw_comp_bios": "🔧 Версия BIOS",
-  "hw_comp_os": "💻 Операционная система"
+  "hw_comp_os": "💻 Операционная система",
+  "drive_local_disk": "Локальный диск",
+  "pipeline_section_header": "ЭТАПЫ СКАНИРОВАНИЯ",
+  "module_items_count": "{count} шт. • {size}",
+  "cleanup_starting": "Запуск проверки безопасности...",
+  "cleanup_space_recovered": "Освобождено места: {size}",
+  "cleanup_processing": "Очистка ({processed}/{total}): {path}",
+  "cleanup_cancelling": "Безопасная отмена очистки...",
+  "turbo_flushing": "⏳ Оптимизация памяти...",
+  "turbo_mode_work_label": "Рабочий режим",
+  "turbo_mode_game_label": "Игровой режим",
+  "turbo_feedback_freed": "🎉 {mode}: оптимизировано {count} процессов, освобождено {size} RAM!",
+  "turbo_feedback_optimized": "✅ {mode}: Рабочие наборы всех процессов оптимизированы.",
+  "about_description": "CleanGuard — это безопасная утилита для очистки и оптимизации дискового пространства Windows.\nРазработана со строгими защитными механизмами для гарантии сохранности личных документов и стабильности системы.",
+  "about_supported_os": "Поддерживаемые операционные системы:"
 }
 

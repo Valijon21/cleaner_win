@@ -293,6 +293,20 @@
   "hw_comp_gpu": "🎮 Graphics Card (GPU)",
   "hw_comp_motherboard": "🗄️ Motherboard",
   "hw_comp_bios": "🔧 BIOS Version",
-  "hw_comp_os": "💻 Operating System"
+  "hw_comp_os": "💻 Operating System",
+  "drive_local_disk": "Local Disk",
+  "pipeline_section_header": "LIVE SCAN PIPELINE",
+  "module_items_count": "{count} items • {size}",
+  "cleanup_starting": "Starting safety verification...",
+  "cleanup_space_recovered": "Space recovered: {size}",
+  "cleanup_processing": "Processing ({processed}/{total}): {path}",
+  "cleanup_cancelling": "Cancelling cleanup safely...",
+  "turbo_flushing": "⏳ Optimizing memory...",
+  "turbo_mode_work_label": "Work Mode",
+  "turbo_mode_game_label": "Game Mode",
+  "turbo_feedback_freed": "🎉 {mode}: {count} processes optimized, {size} RAM freed!",
+  "turbo_feedback_optimized": "✅ {mode}: All process working sets optimized.",
+  "about_description": "CleanGuard is a safety-first Windows cleanup and storage optimization utility.\nEngineered with strict non-bypassable safety gates to ensure zero loss of user documents or system integrity.",
+  "about_supported_os": "Supported Operating Systems:"
 }
 

@@ -215,26 +215,40 @@ class TurboPage(QWidget):
         free_str = format_bytes(info.get("avail_bytes", 0))
         total_str = format_bytes(info.get("total_bytes", 0))
 
-        self.lbl_used_ram.setText(f"Band: {used_str}")
-        self.lbl_free_ram.setText(f"Bo'sh: {free_str}")
-        self.lbl_total_ram.setText(f"Jami: {total_str}")
+        self.lbl_used_ram.setText(tr("turbo_used", "Band: {val}", val=used_str))
+        self.lbl_free_ram.setText(tr("turbo_free", "Bo'sh: {val}", val=free_str))
+        self.lbl_total_ram.setText(tr("turbo_total", "Jami: {val}", val=total_str))
 
     def _on_flush_clicked(self) -> None:
         self.btn_flush.setEnabled(False)
-        self.btn_flush.setText("⏳ Xotira optimallashtirilmoqda...")
+        self.btn_flush.setText(tr("turbo_flushing", "⏳ Xotira optimallashtirilmoqda..."))
         trimmed, freed = MemoryOptimizer.flush_memory()
         self.update_stats()
         self.btn_flush.setEnabled(True)
-        self.btn_flush.setText("⚡ TEZLASHTIRISH VA RAMNI BO'SHATISH")
+        self.btn_flush.setText(tr("btn_turbo_flush", "⚡ TEZLASHTIRISH VA RAMNI BO'SHATISH"))
 
-        mode_name = "O'yin rejimi" if self.radio_game.isChecked() else "Ish rejimi"
+        mode_name = (
+            tr("turbo_mode_game_label", "O'yin rejimi")
+            if self.radio_game.isChecked()
+            else tr("turbo_mode_work_label", "Ish rejimi")
+        )
         if freed > 0:
             self.lbl_feedback.setText(
-                f"🎉 {mode_name}: {trimmed} ta jarayon optimallashtirildi, {format_bytes(freed)} RAM bo'shatildi!"
+                tr(
+                    "turbo_feedback_freed",
+                    "🎉 {mode}: {count} ta jarayon optimallashtirildi, {size} RAM bo'shatildi!",
+                    mode=mode_name,
+                    count=trimmed,
+                    size=format_bytes(freed),
+                )
             )
         else:
             self.lbl_feedback.setText(
-                f"✅ {mode_name}: Barcha jarayonlar ishchi to'plami optimallashtirildi."
+                tr(
+                    "turbo_feedback_optimized",
+                    "✅ {mode}: Barcha jarayonlar ishchi to'plami optimallashtirildi.",
+                    mode=mode_name,
+                )
             )
 
     def retranslate_ui(self, lang_code: str = "") -> None:
@@ -245,4 +259,5 @@ class TurboPage(QWidget):
         self.radio_work.setText(tr("turbo_mode_work", "💼 Ish rejimi (Work Mode) — Ofis va dasturlash uchun barqaror tezlashtirish"))
         self.radio_game.setText(tr("turbo_mode_game", "🎮 O'yin rejimi (Game Mode) — Maksimal erkin RAM va fonni to'xtatish"))
         self.btn_flush.setText(tr("btn_turbo_flush", "⚡ TEZLASHTIRISH VA RAMNI BO'SHATISH"))
+        self.update_stats()
 

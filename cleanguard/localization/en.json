@@ -141,6 +141,10 @@
   "rule_pyinstaller_desc": "Safely clean abandoned _MEI caches from terminated applications",
   "reason_pyinstaller_safe": "Orphaned PyInstaller cache (process terminated, older than 24 hours)",
   "reason_pyinstaller_review": "Recent PyInstaller cache (less than 24 hours old)",
-  "reason_pyinstaller_blocked": "PyInstaller cache is currently in active use by a running process"
+  "reason_pyinstaller_blocked": "PyInstaller cache is currently in active use by a running process",
+  "nav_startup": "Startup Manager",
+  "nav_duplicates": "Duplicate Finder",
+  "nav_turbo": "Turbo Boost",
+  "nav_privacy": "Privacy Sweep"
 }
 

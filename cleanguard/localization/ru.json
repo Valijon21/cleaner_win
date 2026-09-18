@@ -141,6 +141,10 @@
   "rule_pyinstaller_desc": "Безопасная очистка устаревших кэшей _MEI от закрытых приложений",
   "reason_pyinstaller_safe": "Устаревший кэш PyInstaller (процесс завершен, старше 24 часов)",
   "reason_pyinstaller_review": "Недавний кэш PyInstaller (менее 24 часов)",
-  "reason_pyinstaller_blocked": "Кэш PyInstaller в настоящее время используется активным процессом"
+  "reason_pyinstaller_blocked": "Кэш PyInstaller в настоящее время используется активным процессом",
+  "nav_startup": "Автозагрузка",
+  "nav_duplicates": "Дубликаты файлов",
+  "nav_turbo": "Ускорение (Boost)",
+  "nav_privacy": "Приватность (Privacy)"
 }
 

@@ -141,6 +141,10 @@
   "rule_pyinstaller_desc": "Yopilgan dasturlarning eskirgan vaqtinchalik _MEI keshlarini xavfsiz tozalash",
   "reason_pyinstaller_safe": "Eskirgan PyInstaller keshi (jarayon yopilgan, 24 soatdan ortiq)",
   "reason_pyinstaller_review": "Yaqinda yaratilgan PyInstaller keshi (24 soatdan kam)",
-  "reason_pyinstaller_blocked": "PyInstaller keshi hozirda faol ishlayotgan dastur tomonidan foydalanilmoqda"
+  "reason_pyinstaller_blocked": "PyInstaller keshi hozirda faol ishlayotgan dastur tomonidan foydalanilmoqda",
+  "nav_startup": "Avto-yuklanish",
+  "nav_duplicates": "Dublikat fayllar",
+  "nav_turbo": "Tezlashtirish (Boost)",
+  "nav_privacy": "Maxfiylik (Privacy)"
 }
 

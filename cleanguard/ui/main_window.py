@@ -26,6 +26,7 @@ from cleanguard.ui.cleanup_page import CleanupPage
 from cleanguard.ui.history_page import HistoryPage
 from cleanguard.ui.settings_page import SettingsPage
 from cleanguard.ui.about_page import AboutPage
+from cleanguard.ui.startup_page import StartupPage
 from cleanguard.ui.tray import CleanGuardTrayIcon
 from cleanguard.services.scan_service import ScanWorker
 from cleanguard.services.cleanup_service import CleanupWorker
@@ -96,6 +97,7 @@ class MainWindow(QMainWindow):
             ("📊 " + tr("nav_dashboard"), 0),
             ("🔍 " + tr("nav_scan"), 1),
             ("📋 " + tr("nav_results"), 2),
+            ("🚀 " + tr("nav_startup"), 7),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
             ("ℹ️ " + tr("nav_about"), 6),
@@ -168,6 +170,7 @@ class MainWindow(QMainWindow):
         self.page_history = HistoryPage(self.db)
         self.page_settings = SettingsPage()
         self.page_about = AboutPage()
+        self.page_startup = StartupPage()
 
         self.stack.addWidget(self.page_dashboard)   # 0
         self.stack.addWidget(self.page_scan)        # 1
@@ -176,6 +179,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.page_history)     # 4
         self.stack.addWidget(self.page_settings)    # 5
         self.stack.addWidget(self.page_about)       # 6
+        self.stack.addWidget(self.page_startup)     # 7
 
         shell_layout.addWidget(self.stack)
 
@@ -267,16 +271,17 @@ class MainWindow(QMainWindow):
     def retranslate_ui(self, lang_code: str = "") -> None:
         """Update navigation labels, tray actions, and subpages dynamically."""
         nav_titles = [
-            "📊 " + tr("nav_dashboard"),
-            "🔍 " + tr("nav_scan"),
-            "📋 " + tr("nav_results"),
-            "📜 " + tr("nav_history"),
-            "⚙️ " + tr("nav_settings"),
-            "ℹ️ " + tr("nav_about"),
+            ("📊 " + tr("nav_dashboard"), 0),
+            ("🔍 " + tr("nav_scan"), 1),
+            ("📋 " + tr("nav_results"), 2),
+            ("🚀 " + tr("nav_startup"), 7),
+            ("📜 " + tr("nav_history"), 4),
+            ("⚙️ " + tr("nav_settings"), 5),
+            ("ℹ️ " + tr("nav_about"), 6),
         ]
         for idx, (btn, page_idx) in enumerate(self.nav_buttons):
             if idx < len(nav_titles):
-                btn.setText(nav_titles[idx])
+                btn.setText(nav_titles[idx][0])
 
         if self.btn_elevation:
             self.btn_elevation.setText("🛡️ " + tr("btn_restart_admin"))

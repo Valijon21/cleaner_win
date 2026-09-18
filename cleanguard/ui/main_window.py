@@ -38,6 +38,7 @@ from cleanguard.core.safety import SafetyEngine
 from cleanguard.core.config import ConfigManager
 from cleanguard.database.db import DatabaseManager
 from cleanguard.windows.privileges import is_user_admin, request_elevation
+from cleanguard.windows.restore_point import create_restore_point
 from cleanguard.localization import tr, get_localization
 from cleanguard.utils.formatting import format_bytes
 from cleanguard.utils.logging import get_logger
@@ -357,6 +358,12 @@ class MainWindow(QMainWindow):
         )
         if reply == QMessageBox.Yes:
             logger.info("User confirmed cleanup execution.")
+            if self.config.get("create_restore_point", True):
+                try:
+                    create_restore_point("CleanGuard Pre-Clean Snapshot")
+                except Exception as ex:
+                    logger.debug("Restore point creation skipped/failed: %s", ex)
+
             self.navigate_to(3)
             self.page_cleanup.reset_state()
 

@@ -62,6 +62,7 @@ class CleanCategory(str, Enum):
     CRASH_DUMPS = "crash_dumps"
     THUMBNAIL_CACHE = "thumbnail_cache"
     LARGE_FILES = "large_files"
+    PRIVACY_TRACES = "privacy_traces"
     OTHER = "other"
 
 

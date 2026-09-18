@@ -14,6 +14,7 @@ from cleanguard.core.scanner.log_scanner import LogScanner
 from cleanguard.core.scanner.dump_scanner import CrashDumpScanner
 from cleanguard.core.scanner.browser_scanner import BrowserScanner
 from cleanguard.core.scanner.recycle_scanner import RecycleBinScanner
+from cleanguard.core.scanner.privacy_scanner import PrivacyScanner
 from cleanguard.core.contracts import ScanItem, ScanSummary, RiskLevel
 from cleanguard.core.safety import SafetyEngine
 from cleanguard.utils.filesystem import normalize_path
@@ -40,6 +41,7 @@ class ScannerEngine:
             CrashDumpScanner(self.safety_engine),
             BrowserScanner(self.safety_engine),
             RecycleBinScanner(self.safety_engine),
+            PrivacyScanner(self.safety_engine),
         ]
 
     def register_scanner(self, scanner: BaseScanner) -> None:

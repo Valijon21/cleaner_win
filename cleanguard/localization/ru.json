@@ -35,6 +35,7 @@
   "category_recycle_bin": "Корзина (Recycle Bin)",
   "category_crash_dumps": "Дампы сбоев (.dmp)",
   "category_thumbnail_cache": "Кэш эскизов (Thumbnails)",
+  "category_privacy_traces": "Следы приватности и недавние документы",
   "risk_safe": "БЕЗОПАСНО",
   "risk_review": "ВНИМАНИЕ",
   "risk_blocked": "ЗАБЛОКИРОВАНО",

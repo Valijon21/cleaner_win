@@ -35,6 +35,7 @@
   "category_recycle_bin": "Chiqindi qutisi (Recycle Bin)",
   "category_crash_dumps": "Nosozlik hisobotlari (.dmp)",
   "category_thumbnail_cache": "Eskizlar keshi (Thumbnails)",
+  "category_privacy_traces": "Maxfiylik va ochilgan fayllar izlari",
   "risk_safe": "XAVFSIZ",
   "risk_review": "KO'RIB CHIQISH",
   "risk_blocked": "BLOKLANGAN",

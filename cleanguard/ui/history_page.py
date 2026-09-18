@@ -22,7 +22,7 @@ from PyQt5.QtCore import Qt
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
 from cleanguard.services.export_service import export_history_to_csv, export_history_to_json
-from cleanguard.localization import tr
+from cleanguard.localization import tr, get_localization
 from cleanguard.utils.formatting import format_bytes, format_timestamp, format_number
 
 
@@ -253,3 +253,13 @@ class HistoryPage(QWidget):
                 QMessageBox.information(self, "Export", tr("history_export_success", path=path))
             else:
                 QMessageBox.warning(self, "Export", "Failed to write JSON file.")
+
+    def retranslate_ui(self, lang_code: str = "") -> None:
+        """Update strings when language changes."""
+        if lang_code:
+            get_localization().set_language(lang_code)
+        self.lbl_title.setText(tr("nav_history"))
+        self._update_table_headers()
+        self.btn_inspect.setText(f"  👁️ {tr('history_btn_inspect')}  ")
+        self.btn_csv.setText(f"  📥 {tr('history_btn_export_csv')}  ")
+        self.btn_json.setText(f"  📥 {tr('history_btn_export_json')}  ")

@@ -70,9 +70,9 @@ class LocalizationManager:
             logger.error(f"Failed to load localization file {lang_file}: {exc}")
             self._strings = {}
 
-    def tr(self, key: str, **kwargs) -> str:
+    def tr(self, key: str, default: Optional[str] = None, **kwargs) -> str:
         """Translate key and format template values."""
-        text = self._strings.get(key, key)
+        text = self._strings.get(key, default if default is not None else key)
         if kwargs:
             try:
                 return text.format(**kwargs)
@@ -92,6 +92,6 @@ def get_localization() -> LocalizationManager:
     return _loc_manager
 
 
-def tr(key: str, **kwargs) -> str:
+def tr(key: str, default: Optional[str] = None, **kwargs) -> str:
     """Convenience translation function."""
-    return get_localization().tr(key, **kwargs)
+    return get_localization().tr(key, default=default, **kwargs)

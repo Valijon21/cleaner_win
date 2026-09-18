@@ -171,7 +171,7 @@ class StartupPage(QWidget):
             item_name = QTableWidgetItem(f"  {it.name}")
             if it.risk_level == RiskLevel.BLOCKED:
                 item_name.setToolTip("Windows tizim fayli — o'chirish taqiqlanadi")
-            self.table.setItem(row, item_name)
+            self.table.setItem(row, 0, item_name)
 
             # Publisher
             item_pub = QTableWidgetItem(it.publisher or "Noma'lum")

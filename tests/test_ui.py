@@ -57,7 +57,7 @@ def test_main_window_instantiation(qapp, tmp_path):
     db = DatabaseManager(db_path=db_path)
     win = MainWindow(db_manager=db, enable_monitor=False)
 
-    assert win.stack.count() == 7
+    assert win.stack.count() == 10
     assert win.stack.currentIndex() == 0
 
     # Test navigation

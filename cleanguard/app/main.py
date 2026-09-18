@@ -15,8 +15,11 @@ def main() -> int:
     app = bootstrap_application()
     window = MainWindow()
     window.show()
-    logger.info("Main window displayed.")
-    return app.exec_()
+    logger.info("Main window displayed successfully.")
+    exit_code = app.exec_()
+    logger.info(f"Application event loop terminated with code {exit_code}.")
+    return exit_code
+
 
 
 if __name__ == "__main__":

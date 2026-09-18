@@ -79,8 +79,7 @@ class ProtectedPathRegistry:
             dirs.add(folders.downloads)
 
         # User's Home root itself (e.g. C:\Users\John)
-        user_home = normalize_path(os.path.expanduser("~"))
-        dirs.add(user_home)
+        self._user_home = normalize_path(os.path.expanduser("~"))
 
         # Custom user-defined protected paths from settings
         custom_paths = self.config.get("custom_protected_paths", [])
@@ -117,6 +116,10 @@ class ProtectedPathRegistry:
         if norm_target.endswith(":") or norm_target.endswith(":\\") or norm_target == "":
             return True
 
+        # Check user profile root itself (e.g. C:\Users\John)
+        if getattr(self, "_user_home", None) and norm_target == self._user_home:
+            return True
+
         # Check if inside any protected directory
         for p_dir in self._protected_directories:
             if not p_dir:
@@ -140,3 +143,27 @@ class ProtectedPathRegistry:
     def get_protected_paths(self) -> List[str]:
         """Return list of all registered protected directories."""
         return sorted(list(self._protected_directories))
+
+    def reload(self) -> None:
+        """Refresh protected paths cache from system and configuration."""
+        self._reload_protected_paths()
+
+    def add_custom_protected_path(self, custom_path: str) -> None:
+        """Add a path to custom protected paths, save to config and reload."""
+        norm_path = normalize_path(custom_path)
+        if not norm_path:
+            return
+        current = list(self.config.get("custom_protected_paths", []))
+        if norm_path not in current:
+            current.append(norm_path)
+            self.config.set("custom_protected_paths", current)
+            self.reload()
+
+    def remove_custom_protected_path(self, custom_path: str) -> None:
+        """Remove a path from custom protected paths, update config and reload."""
+        norm_path = normalize_path(custom_path)
+        current = list(self.config.get("custom_protected_paths", []))
+        if norm_path in current:
+            current.remove(norm_path)
+            self.config.set("custom_protected_paths", current)
+            self.reload()

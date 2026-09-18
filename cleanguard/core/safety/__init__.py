@@ -88,4 +88,15 @@ class SafetyEngine:
         if is_reparse_point_or_junction(path):
             return False, ErrorCode.INVALID_REPARSE_POINT, "Target is a junction or symbolic link."
 
+        # 5. Smart PyInstaller active process TOCTOU check
+        if getattr(self.risk_engine, "smart_pyinstaller_enabled", False) and category == "temp_files":
+            is_pyi, pyi_risk, pyi_reason = self.risk_engine.pyinstaller_tracker.evaluate_path(
+                path=path,
+                min_age_hours=self.risk_engine.pyinstaller_min_age_hours,
+                allowed_temp_roots=allowed_roots,
+            )
+            if is_pyi and pyi_risk == RiskLevel.BLOCKED:
+                logger.warning(f"Safety Gate REJECTED active PyInstaller file {path}: {pyi_reason}")
+                return False, ErrorCode.ACCESS_DENIED, f"Active PyInstaller process detected: {pyi_reason}"
+
         return True, ErrorCode.NONE, "Safety Gate approved target."

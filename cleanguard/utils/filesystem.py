@@ -18,6 +18,10 @@ def normalize_path(path: str) -> str:
         return ""
     expanded = os.path.expanduser(os.path.expandvars(path))
     abs_path = os.path.abspath(expanded)
+    try:
+        abs_path = os.path.realpath(abs_path)
+    except Exception:
+        pass
     # Normcase on Windows converts slashes and lowercases for case-insensitive matching
     return os.path.normcase(os.path.normpath(abs_path))
 
@@ -94,3 +98,21 @@ def calculate_dir_size_and_count(dir_path: str, max_depth: int = 20) -> Tuple[in
     except (OSError, IOError):
         pass
     return total_size, file_count
+
+
+def prune_empty_directories(dir_path: str, stop_at_dir: str) -> None:
+    """
+    Ascend from dir_path up to (but not including) stop_at_dir,
+    removing any directory that is empty.
+    Never removes stop_at_dir or directories outside it.
+    """
+    norm_stop = normalize_path(stop_at_dir)
+    current = normalize_path(dir_path)
+    while current and current != norm_stop and is_path_under_directory(current, norm_stop):
+        try:
+            if os.path.exists(current) and os.path.isdir(current):
+                os.rmdir(current)
+            current = os.path.dirname(current)
+        except OSError:
+            # Directory not empty or permission denied, stop ascending
+            break

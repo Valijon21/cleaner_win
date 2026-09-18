@@ -16,6 +16,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "recycle_bin_retention_days": 30,
     "log_file_retention_days": 14,
     "min_file_age_hours": 24,  # Safe default: files must be at least 24h old unless purely temp
+    "smart_pyinstaller_cleanup": True,  # Smart cleanup for orphaned PyInstaller temp caches
+    "pyinstaller_min_age_hours": 24,  # Threshold for orphaned PyInstaller caches
     "scan_threads": 4,
     "custom_protected_paths": [],
     "ignored_paths": [],

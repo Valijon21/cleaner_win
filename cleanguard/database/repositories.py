@@ -128,6 +128,20 @@ class HistoryRepository:
             rows = cursor.fetchall()
             return [dict(r) for r in rows]
 
+    def get_cleanup_items(self, cleanup_id: str, limit: int = 1000) -> List[Dict[str, Any]]:
+        """Retrieve itemized records of cleaned files for a session."""
+        sql = """
+        SELECT id, cleanup_id, path, category, risk_level, status, size, error_code, error_message
+        FROM cleanup_items
+        WHERE cleanup_id = ?
+        ORDER BY size DESC
+        LIMIT ?;
+        """
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql, (cleanup_id, limit))
+            return [dict(r) for r in cursor.fetchall()]
+
     def get_cumulative_stats(self) -> Dict[str, float]:
         """Query lifetime recovered storage and deleted file count."""
         sql = "SELECT metric_key, metric_value FROM statistics;"

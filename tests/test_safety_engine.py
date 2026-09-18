@@ -119,3 +119,29 @@ def test_nonexistent_file_rejected(safety_engine):
     )
     assert approved is False
     assert err == ErrorCode.FILE_NOT_FOUND
+
+
+def test_custom_protected_paths_registry():
+    from cleanguard.core.config import ConfigManager
+    from cleanguard.security.protected_paths import ProtectedPathRegistry
+    with tempfile.TemporaryDirectory() as td:
+        cfg_file = os.path.join(td, "cfg.json")
+        cfg = ConfigManager(config_path=cfg_file)
+        reg = ProtectedPathRegistry(config_manager=cfg)
+
+        custom_dir = os.path.join(td, "MyExclusionFolder")
+        os.makedirs(custom_dir, exist_ok=True)
+        test_file = os.path.join(custom_dir, "data.tmp")
+        with open(test_file, "w") as f:
+            f.write("sensitive")
+
+        assert reg.is_protected_path(test_file) is False
+
+        # Add to custom protected paths
+        reg.add_custom_protected_path(custom_dir)
+        assert reg.is_protected_path(test_file) is True
+
+        # Remove from custom protected paths
+        reg.remove_custom_protected_path(custom_dir)
+        assert reg.is_protected_path(test_file) is False
+

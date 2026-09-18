@@ -107,6 +107,8 @@ class BaseScanner(ABC):
         files_count = 0
         bytes_found = 0
         token = cancel_token or CancellationToken()
+        import time
+        last_callback_time = 0.0
 
         try:
             for root, dirs, files in os.walk(root_dir, topdown=True, followlinks=False):
@@ -143,7 +145,6 @@ class BaseScanner(ABC):
 
                     # Age filter check
                     if min_age_seconds > 0:
-                        import time
                         if (time.time() - mtime) < min_age_seconds:
                             continue
 
@@ -174,8 +175,10 @@ class BaseScanner(ABC):
                     items.append(item)
                     bytes_found += size
 
-                    # Throttled progress update every 20 files
-                    if progress_callback and (files_count % 20 == 0 or files_count == 1):
+                    # Throttled progress update (max ~12 updates/sec)
+                    now = time.time()
+                    if progress_callback and (files_count == 1 or (now - last_callback_time) >= 0.08):
+                        last_callback_time = now
                         progress_callback(files_count, file_path, bytes_found)
 
         except (OSError, IOError) as exc:

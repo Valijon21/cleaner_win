@@ -99,3 +99,34 @@ def test_scanner_engine_orchestration():
 
     assert summary.scan_id is not None
     assert isinstance(items, list)
+
+
+def test_scanner_engine_target_categories():
+    safety = SafetyEngine()
+    engine = ScannerEngine(safety_engine=safety, max_threads=2)
+    token = CancellationToken()
+    token.cancel()
+    # Target only temp_files
+    summary, items = engine.scan_all(cancel_token=token, target_categories=["temp_files"])
+    assert summary.scan_id is not None
+
+
+def test_scanner_engine_category_progress_callback():
+    safety = SafetyEngine()
+    engine = ScannerEngine(safety_engine=safety, max_threads=2)
+    token = CancellationToken()
+    token.cancel()
+
+    events = []
+    def on_cat_progress(cat_id, status, count, bytes_f):
+        events.append((cat_id, status, count, bytes_f))
+
+    summary, items = engine.scan_all(
+        cancel_token=token,
+        target_categories=["temp_files"],
+        category_progress_callback=on_cat_progress,
+    )
+    assert len(events) >= 1
+    # Check that queued was emitted
+    assert any(e[1] == "queued" for e in events)
+

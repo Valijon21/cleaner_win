@@ -16,6 +16,7 @@ logger = get_logger("scan_service")
 class ScanWorker(QThread):
     """Background worker thread for running full storage scans without blocking UI."""
     progress = pyqtSignal(str, int, int)  # (status_msg, files_count, bytes_found)
+    category_progress = pyqtSignal(str, str, int, int)  # (category_id, status, files_count, bytes_found)
     finished = pyqtSignal(object, list)   # (ScanSummary, List[ScanItem])
     error = pyqtSignal(str)
 
@@ -29,6 +30,11 @@ class ScanWorker(QThread):
         self.scanner_engine = scanner_engine or ScannerEngine()
         self.history_repo = HistoryRepository(db_manager or DatabaseManager())
         self.cancel_token = CancellationToken()
+        self.target_categories: Optional[list] = None
+
+    def set_target_categories(self, categories: Optional[list]) -> None:
+        """Set specific categories to scan, or None for all configured."""
+        self.target_categories = categories
 
     def cancel(self) -> None:
         """Request scan cancellation."""
@@ -41,9 +47,14 @@ class ScanWorker(QThread):
             def on_progress(msg: str, count: int, bytes_f: int):
                 self.progress.emit(msg, count, bytes_f)
 
+            def on_category_progress(cat_id: str, status: str, count: int, bytes_f: int):
+                self.category_progress.emit(cat_id, status, count, bytes_f)
+
             summary, items = self.scanner_engine.scan_all(
                 cancel_token=self.cancel_token,
                 progress_callback=on_progress,
+                target_categories=self.target_categories,
+                category_progress_callback=on_category_progress,
             )
 
             # Record session to SQLite

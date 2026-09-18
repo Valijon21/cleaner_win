@@ -118,23 +118,46 @@ QFrame#SurfaceCard {
 }
 
 /* Tables */
-QTableWidget {
-    background-color: #111827;
-    border: 1px solid #1F2937;
+QTableView, QTableWidget {
+    background-color: #0F172A;
+    alternate-background-color: #131E32;
+    color: #E2E8F0;
+    border: 1px solid #1E293B;
     border-radius: 8px;
-    gridline-color: #1F2937;
+    gridline-color: transparent;
     selection-background-color: #1E3A8A;
     selection-color: #FFFFFF;
+    outline: none;
+}
+
+QTableView::item, QTableWidget::item {
+    padding: 6px 10px;
+    border-bottom: 1px solid #172235;
+}
+
+QTableView::item:hover, QTableWidget::item:hover {
+    background-color: #1E293B;
+}
+
+QTableView::item:selected, QTableWidget::item:selected {
+    background-color: #1E3A8A;
+    color: #FFFFFF;
 }
 
 QHeaderView::section {
-    background-color: #1F2937;
-    color: #9CA3AF;
+    background-color: #111827;
+    color: #94A3B8;
     font-weight: 600;
     font-size: 12px;
-    padding: 8px;
+    padding: 10px 12px;
     border: none;
-    border-bottom: 1px solid #374151;
+    border-bottom: 2px solid #1E293B;
+    border-right: 1px solid #172235;
+}
+
+QHeaderView::section:hover {
+    background-color: #1F2937;
+    color: #F8FAFC;
 }
 
 /* Progress Bar */
@@ -172,4 +195,126 @@ QScrollBar::handle:vertical:hover {
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
 }
+
+/* ==================== IObit ASC Care Center Elements ==================== */
+
+/* Circular Glowing SCAN Button */
+QPushButton#CircularScanButton {
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, fx:0.5, fy:0.5, stop:0 #1E293B, stop:0.75 #0F172A, stop:1 #06B6D4);
+    border: 3px solid #06B6D4;
+    border-radius: 70px;
+    color: #FFFFFF;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    min-width: 140px;
+    max-width: 140px;
+    min-height: 140px;
+    max-height: 140px;
+}
+
+QPushButton#CircularScanButton:hover {
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.8, fx:0.5, fy:0.5, stop:0 #064E3B, stop:0.75 #0F172A, stop:1 #10B981);
+    border: 3px solid #10B981;
+}
+
+QPushButton#CircularScanButton:pressed {
+    background: #0D9488;
+    border: 3px solid #22D3EE;
+}
+
+/* Primary High-Impact FIX NOW Button */
+QPushButton#FixNowButton {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #059669, stop:1 #10B981);
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 800;
+    padding: 12px 28px;
+    border-radius: 10px;
+    border: 1px solid #34D399;
+    letter-spacing: 0.5px;
+}
+
+QPushButton#FixNowButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #047857, stop:1 #059669);
+    border-color: #6EE7B7;
+}
+
+QPushButton#FixNowButton:pressed {
+    background: #065F46;
+    border-color: #10B981;
+}
+
+QPushButton#FixNowButton:disabled {
+    background: #1F2937;
+    color: #6B7280;
+    border: 1px solid #374151;
+}
+
+/* Care Grid Module Cards */
+QFrame#CareCard {
+    background-color: #111827;
+    border: 1px solid #1F2937;
+    border-radius: 10px;
+    padding: 12px 16px;
+}
+
+QFrame#CareCard:hover {
+    background-color: #151D2F;
+    border: 1px solid #06B6D4;
+}
+
+/* Live Scan Pipeline Stage Cards */
+QFrame#ModuleStageCard {
+    background-color: #111827;
+    border: 1px solid #1F2937;
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* Health Status Banners */
+QFrame#HealthBannerGood {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 rgba(16, 185, 129, 0.12), stop:1 rgba(16, 185, 129, 0.03));
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 10px;
+}
+
+QFrame#HealthBannerFair {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 rgba(245, 158, 11, 0.15), stop:1 rgba(245, 158, 11, 0.03));
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 10px;
+}
+
+QFrame#HealthBannerCritical {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 rgba(239, 68, 68, 0.18), stop:1 rgba(239, 68, 68, 0.04));
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    border-radius: 10px;
+}
+
+/* Care Checkboxes */
+QCheckBox {
+    color: #F9FAFB;
+    font-size: 13px;
+    font-weight: 600;
+    spacing: 10px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid #4B5563;
+    background-color: #1F2937;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #06B6D4;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #06B6D4;
+    border-color: #06B6D4;
+    image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+}
 """
+

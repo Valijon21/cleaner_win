@@ -68,3 +68,30 @@ def test_database_initialization_and_repository():
         stats = repo.get_cumulative_stats()
         assert stats["total_bytes_recovered"] == 1024 * 1024 * 10
         assert stats["total_files_deleted"] == 1
+
+        # 5. Verify Itemized File Audit Details
+        items = repo.get_cleanup_items("clean-001")
+        assert len(items) == 1
+        assert items[0]["path"] == "C:\\Temp\\f1.tmp"
+        assert items[0]["status"] == "SUCCESS"
+        assert items[0]["size"] == 1024 * 1024 * 10
+
+        # 6. Verify History CSV & JSON Export
+        from cleanguard.services.export_service import export_history_to_csv, export_history_to_json
+        csv_path = os.path.join(td, "export.csv")
+        json_path = os.path.join(td, "export.json")
+
+        assert export_history_to_csv(csv_path, history) is True
+        assert os.path.exists(csv_path)
+        with open(csv_path, "r", encoding="utf-8-sig") as f:
+            content = f.read()
+            assert "clean-001" in content
+            assert "10.00 MB" in content
+
+        assert export_history_to_json(json_path, history, items_provider=repo.get_cleanup_items) is True
+        assert os.path.exists(json_path)
+        with open(json_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            assert "clean-001" in content
+            assert "C:\\\\Temp\\\\f1.tmp" in content
+

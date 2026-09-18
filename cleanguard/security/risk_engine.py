@@ -8,6 +8,7 @@ from typing import Tuple, List, Optional
 from cleanguard.core.contracts import RiskLevel, CleanCategory
 from cleanguard.security.protected_paths import ProtectedPathRegistry
 from cleanguard.security.path_guard import PathGuard
+from cleanguard.security.pyinstaller_tracker import PyInstallerTracker
 from cleanguard.windows.shell import is_file_locked, is_reparse_point_or_junction
 from cleanguard.utils.formatting import calculate_age_days
 
@@ -32,10 +33,16 @@ class RiskEngine:
         protected_registry: Optional[ProtectedPathRegistry] = None,
         path_guard: Optional[PathGuard] = None,
         min_age_hours: float = 24.0,
+        smart_pyinstaller_enabled: bool = True,
+        pyinstaller_min_age_hours: float = 24.0,
+        pyinstaller_tracker: Optional[PyInstallerTracker] = None,
     ):
         self.protected = protected_registry or ProtectedPathRegistry()
         self.path_guard = path_guard or PathGuard(self.protected)
         self.min_age_hours = min_age_hours
+        self.smart_pyinstaller_enabled = smart_pyinstaller_enabled
+        self.pyinstaller_min_age_hours = pyinstaller_min_age_hours
+        self.pyinstaller_tracker = pyinstaller_tracker or PyInstallerTracker()
 
     def evaluate(
         self,
@@ -70,9 +77,21 @@ class RiskEngine:
         if is_reparse_point_or_junction(path):
             return RiskLevel.BLOCKED, "Target is a symbolic link or junction.", False
 
-        # 4. Check file extension
+        # 4. Check file extension & Smart PyInstaller Rules
         _, ext = os.path.splitext(path)
         ext_lower = ext.lower()
+
+        # Smart PyInstaller Rule for Temporary Files
+        if self.smart_pyinstaller_enabled and category == CleanCategory.TEMP_FILES.value:
+            is_pyi, pyi_risk, pyi_reason = self.pyinstaller_tracker.evaluate_path(
+                path=path,
+                min_age_hours=self.pyinstaller_min_age_hours,
+                allowed_temp_roots=allowed_roots,
+            )
+            if is_pyi:
+                if pyi_risk == RiskLevel.BLOCKED:
+                    return RiskLevel.BLOCKED, pyi_reason, False
+                return pyi_risk, pyi_reason, True
 
         if ext_lower in EXECUTABLE_EXTENSIONS:
             # Executable files outside explicit safe rules must be BLOCKED or REVIEW

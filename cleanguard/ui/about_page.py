@@ -25,9 +25,9 @@ class AboutPage(QWidget):
         layout.setContentsMargins(32, 28, 32, 28)
         layout.setSpacing(20)
 
-        lbl_title = QLabel(tr("nav_about"))
-        lbl_title.setStyleSheet("font-size: 26px; font-weight: 700; color: #F9FAFB;")
-        layout.addWidget(lbl_title)
+        self.lbl_title = QLabel(tr("nav_about"))
+        self.lbl_title.setStyleSheet("font-size: 26px; font-weight: 700; color: #F9FAFB;")
+        layout.addWidget(self.lbl_title)
 
         card = QFrame()
         card.setObjectName("SurfaceCard")
@@ -67,3 +67,7 @@ class AboutPage(QWidget):
 
         layout.addWidget(card)
         layout.addStretch()
+
+    def retranslate_ui(self) -> None:
+        self.lbl_title.setText(tr("nav_about"))
+

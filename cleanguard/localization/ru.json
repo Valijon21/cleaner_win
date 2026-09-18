@@ -151,6 +151,12 @@
   "uninstaller_subtitle": "Полное удаление установленных программ и очистка остаточных файлов",
   "nav_tweaks": "Оптимизация Windows",
   "tweaks_subtitle": "Удаление встроенных приложений Windows 10/11 и отключение телеметрии",
-  "search_placeholder": "Поиск..."
+  "search_placeholder": "Поиск...",
+  "autocare_title": "Автоматический уход (Scheduled Auto-Care)",
+  "autocare_desc": "Регулярная безопасная фоновая очистка системы через Планировщик заданий Windows.",
+  "autocare_enable": "Включить автоматическую фоновую очистку",
+  "autocare_weekly": "Каждую неделю (Воскресенье 12:00)",
+  "autocare_daily": "Каждый день (12:00)",
+  "btn_test_clean": "Тестовый запуск"
 }
 

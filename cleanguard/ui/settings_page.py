@@ -27,6 +27,8 @@ from cleanguard.security.protected_paths import ProtectedPathRegistry
 from cleanguard.utils.logging import open_log_folder, set_log_level, get_current_log_level
 from cleanguard.ui.widgets.log_viewer_dialog import LogViewerDialog
 from cleanguard.services.export_service import export_diagnostic_package
+from cleanguard.windows.scheduler import AutoCareScheduler
+from cleanguard.utils.formatting import format_bytes
 
 
 
@@ -278,6 +280,56 @@ class SettingsPage(QWidget):
         diag_layout.addLayout(diag_btn_row)
 
         layout.addWidget(self.card_diagnostics)
+
+        # 5. Scheduled Auto-Care Card
+        self.card_autocare = QFrame()
+        self.card_autocare.setObjectName("SurfaceCard")
+        auto_layout = QVBoxLayout(self.card_autocare)
+        auto_layout.setContentsMargins(24, 20, 24, 20)
+        auto_layout.setSpacing(14)
+
+        self.lbl_auto_title = QLabel("⏰ " + tr("autocare_title", "Avtomatik parvarish (Scheduled Auto-Care)"))
+        self.lbl_auto_title.setStyleSheet("font-size: 15px; font-weight: 600; color: #10B981;")
+        auto_layout.addWidget(self.lbl_auto_title)
+
+        self.lbl_auto_desc = QLabel(
+            tr("autocare_desc", "Windows Task Scheduler orqali kompyuterni muntazam fonda xavfsiz tozalash.")
+        )
+        self.lbl_auto_desc.setStyleSheet("color: #9CA3AF; font-size: 12px;")
+        auto_layout.addWidget(self.lbl_auto_desc)
+
+        sched_row = QHBoxLayout()
+        self.chk_autocare = QCheckBox(tr("autocare_enable", "Avtomatik fonda tozalashni yoqish"))
+        self.chk_autocare.setCursor(Qt.PointingHandCursor)
+        self.combo_schedule = QComboBox()
+        self.combo_schedule.addItem(tr("autocare_weekly", "Har hafta (Yakshanba 12:00)"), ("WEEKLY", "SUN", "12:00"))
+        self.combo_schedule.addItem(tr("autocare_daily", "Har kuni (12:00)"), ("DAILY", "", "12:00"))
+
+        sched_row.addWidget(self.chk_autocare)
+        sched_row.addSpacing(16)
+        sched_row.addWidget(self.combo_schedule)
+        sched_row.addStretch()
+        auto_layout.addLayout(sched_row)
+
+        action_row = QHBoxLayout()
+        self.lbl_autocare_status = QLabel("Holat: Tekshirilmoqda...")
+        self.lbl_autocare_status.setStyleSheet("color: #9CA3AF; font-size: 12px;")
+        action_row.addWidget(self.lbl_autocare_status)
+        action_row.addStretch()
+
+        self.btn_test_autocare = QPushButton("⚡ " + tr("btn_test_clean", "Hozir sinab ko'rish"))
+        self.btn_test_autocare.setCursor(Qt.PointingHandCursor)
+        self.btn_test_autocare.clicked.connect(self._on_test_autocare_clicked)
+        action_row.addWidget(self.btn_test_autocare)
+        auto_layout.addLayout(action_row)
+
+        # Wire signals
+        self.chk_autocare.toggled.connect(self._on_autocare_toggled)
+        self.combo_schedule.currentIndexChanged.connect(self._on_autocare_schedule_changed)
+
+        layout.addWidget(self.card_autocare)
+        self._refresh_autocare_status()
+
         layout.addStretch()
 
         scroll.setWidget(content_widget)
@@ -368,4 +420,56 @@ class SettingsPage(QWidget):
         for cat_id, tr_key in self.CATEGORIES:
             if cat_id in self.category_checkboxes:
                 self.category_checkboxes[cat_id].setText(tr(tr_key))
+
+        self.lbl_auto_title.setText("⏰ " + tr("autocare_title", "Avtomatik parvarish (Scheduled Auto-Care)"))
+        self.lbl_auto_desc.setText(tr("autocare_desc", "Windows Task Scheduler orqali kompyuterni muntazam fonda xavfsiz tozalash."))
+        self.chk_autocare.setText(tr("autocare_enable", "Avtomatik fonda tozalashni yoqish"))
+        self.btn_test_autocare.setText("⚡ " + tr("btn_test_clean", "Hozir sinab ko'rish"))
+
+    def _refresh_autocare_status(self) -> None:
+        try:
+            is_sched, info = AutoCareScheduler.is_scheduled()
+        except Exception:
+            is_sched, info = False, None
+
+        self.chk_autocare.blockSignals(True)
+        self.chk_autocare.setChecked(is_sched)
+        self.chk_autocare.blockSignals(False)
+        if is_sched:
+            self.lbl_autocare_status.setText(f"Holat: Faol ({info})")
+            self.lbl_autocare_status.setStyleSheet("color: #10B981; font-size: 12px; font-weight: 600;")
+        else:
+            self.lbl_autocare_status.setText("Holat: O'chiq")
+            self.lbl_autocare_status.setStyleSheet("color: #9CA3AF; font-size: 12px;")
+
+    def _on_autocare_toggled(self, checked: bool) -> None:
+        if checked:
+            data = self.combo_schedule.currentData()
+            freq, day, time_str = data if data else ("WEEKLY", "SUN", "12:00")
+            ok, msg = AutoCareScheduler.enable_schedule(freq, day, time_str)
+            if not ok:
+                self.chk_autocare.blockSignals(True)
+                self.chk_autocare.setChecked(False)
+                self.chk_autocare.blockSignals(False)
+                QMessageBox.warning(self, "Xatolik", msg)
+        else:
+            ok, msg = AutoCareScheduler.disable_schedule()
+            if not ok:
+                QMessageBox.warning(self, "Xatolik", msg)
+        self._refresh_autocare_status()
+
+    def _on_autocare_schedule_changed(self) -> None:
+        if self.chk_autocare.isChecked():
+            self._on_autocare_toggled(True)
+
+    def _on_test_autocare_clicked(self) -> None:
+        try:
+            files, recovered = AutoCareScheduler.run_auto_clean_now()
+            QMessageBox.information(
+                self,
+                "Auto-Care sinovi",
+                f"Sinov muvaffaqiyatli yakunlandi!\nO'chirilgan fayllar: {files} ta\nBo'shatilgan joy: {format_bytes(recovered)}",
+            )
+        except Exception as ex:
+            QMessageBox.warning(self, "Xatolik", f"Auto-Care sinovida xatolik: {ex}")
 

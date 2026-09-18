@@ -151,6 +151,12 @@
   "uninstaller_subtitle": "Thoroughly uninstall software and eliminate residual leftovers",
   "nav_tweaks": "Windows Tweaks",
   "tweaks_subtitle": "Manage Windows 10/11 bloatware apps and telemetry data collection",
-  "search_placeholder": "Search..."
+  "search_placeholder": "Search...",
+  "autocare_title": "Scheduled Auto-Care",
+  "autocare_desc": "Regular automated silent background cleaning via Windows Task Scheduler.",
+  "autocare_enable": "Enable automated background cleaning",
+  "autocare_weekly": "Weekly (Sunday 12:00)",
+  "autocare_daily": "Daily (12:00)",
+  "btn_test_clean": "Test Run Now"
 }
 

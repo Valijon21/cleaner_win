@@ -151,6 +151,12 @@
   "uninstaller_subtitle": "O'rnatilgan dasturlarni to'liq o'chiring va qoldiqlarini tozalang",
   "nav_tweaks": "Windows optimizatsiya",
   "tweaks_subtitle": "Windows 10/11 standart ilovalarini (Bloatware) va telemetriya xizmatlarini boshqaring",
-  "search_placeholder": "Qidiruv..."
+  "search_placeholder": "Qidiruv...",
+  "autocare_title": "Avtomatik parvarish (Scheduled Auto-Care)",
+  "autocare_desc": "Windows Task Scheduler orqali kompyuterni muntazam fonda xavfsiz tozalash.",
+  "autocare_enable": "Avtomatik fonda tozalashni yoqish",
+  "autocare_weekly": "Har hafta (Yakshanba 12:00)",
+  "autocare_daily": "Har kuni (12:00)",
+  "btn_test_clean": "Hozir sinab ko'rish"
 }
 

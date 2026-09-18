@@ -38,6 +38,10 @@ REG_HKCU_RUN = r"Software\Microsoft\Windows\CurrentVersion\Run"
 REG_HKLM_RUN = r"Software\Microsoft\Windows\CurrentVersion\Run"
 REG_HKLM_WOW64_RUN = r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run"
 REG_HKCU_WOW64_RUN = r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run"
+REG_HKCU_RUNONCE = r"Software\Microsoft\Windows\CurrentVersion\RunOnce"
+REG_HKLM_RUNONCE = r"Software\Microsoft\Windows\CurrentVersion\RunOnce"
+REG_POLICIES_RUN_HKCU = r"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
+REG_POLICIES_RUN_HKLM = r"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
 REG_CLEANGUARD_BACKUP = r"Software\CleanGuard\DisabledStartup"
 
 REG_STARTUP_APPROVED_HKCU_RUN = r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
@@ -149,7 +153,15 @@ class StartupManager:
             )
         )
 
-        # 5. CleanGuard Disabled Backup Keys
+        # 5. RunOnce Keys (one-time autoruns)
+        items.extend(self._scan_registry_key(winreg.HKEY_CURRENT_USER, REG_HKCU_RUNONCE, "HKCU_RUNONCE"))
+        items.extend(self._scan_registry_key(winreg.HKEY_LOCAL_MACHINE, REG_HKLM_RUNONCE, "HKLM_RUNONCE", access_flags=access_64))
+
+        # 6. Group Policy Startup Keys
+        items.extend(self._scan_registry_key(winreg.HKEY_CURRENT_USER, REG_POLICIES_RUN_HKCU, "POLICIES_RUN"))
+        items.extend(self._scan_registry_key(winreg.HKEY_LOCAL_MACHINE, REG_POLICIES_RUN_HKLM, "POLICIES_RUN", access_flags=access_64))
+
+        # 7. CleanGuard Disabled Backup Keys
         items.extend(self._scan_disabled_backup_keys())
 
         # 6. User Startup Folder

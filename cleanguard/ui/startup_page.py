@@ -193,6 +193,9 @@ class StartupPage(QWidget):
             "USER_FOLDER": "Autostart Papkasi",
             "COMMON_FOLDER": "Umumiy Papka",
             "SCHEDULED_TASK": "Vazifalar Rejasi",
+            "HKCU_RUNONCE": "Reestr (RunOnce)",
+            "HKLM_RUNONCE": "Reestr (RunOnce HKLM)",
+            "POLICIES_RUN": "Guruh Siyosati (Policy)",
         }
 
         self.table.setUpdatesEnabled(False)

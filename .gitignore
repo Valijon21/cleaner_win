@@ -29,11 +29,26 @@ wheels/
 venv/
 ENV/
 
-# Testing & Coverage
+# Testing & Coverage & Linters
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 
-# Local databases & logs
+# Local databases, logs, backups & temp files
 *.db
 *.log
+*.bak
+*.tmp
+*.reg
+backups/
+reports/
+
+# Local Agent kit & AI tools
+.agents/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -167,3 +167,8 @@ class ProtectedPathRegistry:
             current.remove(norm_path)
             self.config.set("custom_protected_paths", current)
             self.reload()
+
+
+def is_system_critical_path(path: str) -> bool:
+    """Convenience helper to check if a path is protected."""
+    return ProtectedPathRegistry().is_protected_path(path)

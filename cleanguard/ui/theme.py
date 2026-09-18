@@ -258,23 +258,23 @@ QPushButton#CircularScanButton:pressed {
 
 /* Primary High-Impact FIX NOW Button */
 QPushButton#FixNowButton {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #059669, stop:1 #10B981);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #059669, stop:0.55 #10B981, stop:1 #06B6D4);
     color: #FFFFFF;
     font-size: 15px;
     font-weight: 800;
-    padding: 12px 28px;
+    padding: 12px 30px;
     border-radius: 10px;
     border: 1px solid #34D399;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
 }
 
 QPushButton#FixNowButton:hover {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #047857, stop:1 #059669);
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #047857, stop:0.55 #059669, stop:1 #0891B2);
     border-color: #6EE7B7;
 }
 
 QPushButton#FixNowButton:pressed {
-    background: #065F46;
+    background: #064E3B;
     border-color: #10B981;
 }
 
@@ -287,22 +287,27 @@ QPushButton#FixNowButton:disabled {
 /* Care Grid Module Cards */
 QFrame#CareCard {
     background-color: #111827;
-    border: 1px solid #1F2937;
+    border: 1px solid #1E293B;
     border-radius: 10px;
     padding: 12px 16px;
 }
 
 QFrame#CareCard:hover {
-    background-color: #151D2F;
-    border: 1px solid #06B6D4;
+    background-color: #162238;
+    border: 1px solid #10B981;
 }
 
 /* Live Scan Pipeline Stage Cards */
 QFrame#ModuleStageCard {
     background-color: #111827;
-    border: 1px solid #1F2937;
-    border-radius: 8px;
-    padding: 12px 16px;
+    border: 1px solid #1E293B;
+    border-radius: 10px;
+    padding: 10px 16px;
+}
+
+QFrame#ModuleStageCard:hover {
+    background-color: #162033;
+    border: 1px solid #38BDF8;
 }
 
 /* Health Status Banners */

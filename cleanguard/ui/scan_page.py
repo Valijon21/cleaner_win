@@ -30,12 +30,26 @@ class ModuleStageCard(QFrame):
         self.category_id = category_id
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(12)
+        layout.setContentsMargins(14, 10, 14, 10)
+        layout.setSpacing(14)
+
+        from cleanguard.ui.widgets.cards import CATEGORY_BADGE_STYLES
+        badge_style = CATEGORY_BADGE_STYLES.get(
+            category_id,
+            "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1E293B, stop:1 #334155); border: 1px solid #475569;"
+        )
+        self.badge_box = QFrame()
+        self.badge_box.setFixedSize(36, 36)
+        self.badge_box.setStyleSheet(f"{badge_style} border-radius: 8px;")
+        badge_layout = QVBoxLayout(self.badge_box)
+        badge_layout.setContentsMargins(0, 0, 0, 0)
+        badge_layout.setAlignment(Qt.AlignCenter)
 
         self.lbl_icon = QLabel(icon)
-        self.lbl_icon.setStyleSheet("font-size: 20px; background: transparent;")
-        layout.addWidget(self.lbl_icon)
+        self.lbl_icon.setStyleSheet("font-size: 18px; background: transparent;")
+        self.lbl_icon.setAlignment(Qt.AlignCenter)
+        badge_layout.addWidget(self.lbl_icon)
+        layout.addWidget(self.badge_box)
 
         self.lbl_title = QLabel(title)
         self.lbl_title.setStyleSheet("font-size: 13px; font-weight: 700; color: #F9FAFB; background: transparent;")

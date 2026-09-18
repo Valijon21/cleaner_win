@@ -165,6 +165,17 @@ class CategoryCard(QFrame):
         self.btn_action.setText(tr("dashboard_btn_scan_category"))
 
 
+CATEGORY_BADGE_STYLES = {
+    "temp_files": "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #064E3B, stop:1 #059669); border: 1px solid #10B981;",
+    "app_cache": "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #78350F, stop:1 #D97706); border: 1px solid #F59E0B;",
+    "browser_cache": "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1E3A8A, stop:1 #2563EB); border: 1px solid #3B82F6;",
+    "system_logs": "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #4C1D95, stop:1 #7C3AED); border: 1px solid #8B5CF6;",
+    "crash_dumps": "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #881337, stop:1 #E11D48); border: 1px solid #F43F5E;",
+    "thumbnail_cache": "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #134E4A, stop:1 #0D9488); border: 1px solid #14B8A6;",
+    "recycle_bin": "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #064E3B, stop:1 #10B981); border: 1px solid #34D399;",
+}
+
+
 class CareModuleCard(QFrame):
     """Interactive selectable module card for IObit ASC Care Selector Grid."""
     toggled = pyqtSignal(bool)
@@ -177,24 +188,54 @@ class CareModuleCard(QFrame):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(12)
+        layout.setSpacing(14)
 
         from PyQt5.QtWidgets import QCheckBox
         self.checkbox = QCheckBox()
         self.checkbox.setChecked(checked)
         self.checkbox.toggled.connect(self._on_toggled)
+        self.checkbox.setStyleSheet("""
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border: 2px solid #4B5563;
+                border-radius: 4px;
+                background-color: #1F2937;
+            }
+            QCheckBox::indicator:hover {
+                border-color: #10B981;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #10B981;
+                border-color: #34D399;
+            }
+        """)
         layout.addWidget(self.checkbox)
 
+        # High-tech gradient icon badge box (IObit ASC signature style)
+        badge_style = CATEGORY_BADGE_STYLES.get(
+            category_id,
+            "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1E293B, stop:1 #334155); border: 1px solid #475569;"
+        )
+        self.badge_box = QFrame()
+        self.badge_box.setFixedSize(40, 40)
+        self.badge_box.setStyleSheet(f"{badge_style} border-radius: 8px;")
+        badge_layout = QVBoxLayout(self.badge_box)
+        badge_layout.setContentsMargins(0, 0, 0, 0)
+        badge_layout.setAlignment(Qt.AlignCenter)
+
         self.lbl_icon = QLabel(icon)
-        self.lbl_icon.setStyleSheet("font-size: 22px; background: transparent;")
-        layout.addWidget(self.lbl_icon)
+        self.lbl_icon.setStyleSheet("font-size: 20px; background: transparent;")
+        self.lbl_icon.setAlignment(Qt.AlignCenter)
+        badge_layout.addWidget(self.lbl_icon)
+        layout.addWidget(self.badge_box)
 
         text_layout = QVBoxLayout()
-        text_layout.setSpacing(2)
+        text_layout.setSpacing(3)
         self.lbl_title = QLabel(title)
         self.lbl_title.setStyleSheet("font-size: 13px; font-weight: 700; color: #F9FAFB; background: transparent;")
         self.lbl_desc = QLabel(description)
-        self.lbl_desc.setStyleSheet("font-size: 11px; color: #9CA3AF; background: transparent;")
+        self.lbl_desc.setStyleSheet("font-size: 11px; color: #9CA3AF; background: transparent; line-height: 1.3;")
         self.lbl_desc.setWordWrap(True)
 
         text_layout.addWidget(self.lbl_title)
@@ -203,7 +244,6 @@ class CareModuleCard(QFrame):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            # If user clicked directly on the checkbox widget, let checkbox handle its own click
             pos = event.pos()
             if not self.checkbox.geometry().contains(pos):
                 self.checkbox.setChecked(not self.checkbox.isChecked())

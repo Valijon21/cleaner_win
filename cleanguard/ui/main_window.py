@@ -94,8 +94,17 @@ class MainWindow(QMainWindow):
         brand_row = QHBoxLayout()
         brand_row.setContentsMargins(8, 0, 8, 8)
         brand_row.setSpacing(10)
-        lbl_logo = QLabel("🛡️")
-        lbl_logo.setStyleSheet("font-size: 24px;")
+        
+        lbl_logo = QLabel()
+        app_icon = get_app_icon()
+        pixmap = app_icon.pixmap(28, 28)
+        if not pixmap.isNull():
+            lbl_logo.setPixmap(pixmap)
+            lbl_logo.setFixedSize(28, 28)
+            lbl_logo.setScaledContents(True)
+        else:
+            lbl_logo.setText("🛡️")
+            lbl_logo.setStyleSheet("font-size: 24px;")
 
         brand_col = QVBoxLayout()
         brand_col.setSpacing(1)

@@ -28,6 +28,7 @@ from cleanguard.ui.settings_page import SettingsPage
 from cleanguard.ui.about_page import AboutPage
 from cleanguard.ui.startup_page import StartupPage
 from cleanguard.ui.duplicates_page import DuplicatesPage
+from cleanguard.ui.turbo_page import TurboPage
 from cleanguard.ui.tray import CleanGuardTrayIcon
 from cleanguard.services.scan_service import ScanWorker
 from cleanguard.services.cleanup_service import CleanupWorker
@@ -100,6 +101,7 @@ class MainWindow(QMainWindow):
             ("📋 " + tr("nav_results"), 2),
             ("🚀 " + tr("nav_startup"), 7),
             ("👥 " + tr("nav_duplicates"), 8),
+            ("⚡ " + tr("nav_turbo"), 9),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
             ("ℹ️ " + tr("nav_about"), 6),
@@ -174,6 +176,7 @@ class MainWindow(QMainWindow):
         self.page_about = AboutPage()
         self.page_startup = StartupPage()
         self.page_duplicates = DuplicatesPage()
+        self.page_turbo = TurboPage()
 
         self.stack.addWidget(self.page_dashboard)   # 0
         self.stack.addWidget(self.page_scan)        # 1
@@ -184,6 +187,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.page_about)       # 6
         self.stack.addWidget(self.page_startup)     # 7
         self.stack.addWidget(self.page_duplicates)  # 8
+        self.stack.addWidget(self.page_turbo)       # 9
 
         shell_layout.addWidget(self.stack)
 
@@ -280,6 +284,7 @@ class MainWindow(QMainWindow):
             ("📋 " + tr("nav_results"), 2),
             ("🚀 " + tr("nav_startup"), 7),
             ("👥 " + tr("nav_duplicates"), 8),
+            ("⚡ " + tr("nav_turbo"), 9),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
             ("ℹ️ " + tr("nav_about"), 6),

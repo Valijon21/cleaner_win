@@ -30,11 +30,21 @@ class TurboPage(QWidget):
         super().__init__(parent)
         self._init_ui()
 
-        # Update stats periodically
+        # Periodic memory telemetry (active only while page is visible)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_stats)
-        self.timer.start(2500)
         self.update_stats()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self.update_stats()
+        if not self.timer.isActive():
+            self.timer.start(2500)
+
+    def hideEvent(self, event) -> None:
+        super().hideEvent(event)
+        if self.timer.isActive():
+            self.timer.stop()
 
     def _init_ui(self) -> None:
         outer_layout = QVBoxLayout(self)

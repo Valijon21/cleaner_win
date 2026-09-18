@@ -2,7 +2,7 @@
 Tweaks Page: Windows 10/11 Bloatware Remover & Telemetry Privacy Tweaker UI.
 """
 
-from typing import List
+from typing import List, Optional
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -18,13 +18,26 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QFrame,
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from cleanguard.windows.tweaks import TweaksManager, PrivacyTweak, BloatwareApp
 from cleanguard.windows.privileges import is_user_admin, request_elevation
 from cleanguard.localization import tr
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("ui.tweaks")
+
+
+class BloatwareScanWorker(QThread):
+    """Asynchronous background worker for scanning AppX bloatware packages."""
+    finished = pyqtSignal(list)
+
+    def __init__(self, manager: TweaksManager, parent=None):
+        super().__init__(parent)
+        self.manager = manager
+
+    def run(self):
+        apps = self.manager.get_bloatware_status()
+        self.finished.emit(apps)
 
 
 class TweaksPage(QWidget):
@@ -34,8 +47,18 @@ class TweaksPage(QWidget):
         super().__init__(parent)
         self.manager = TweaksManager()
         self.bloatware_apps: List[BloatwareApp] = []
+        self._loaded: bool = False
+        self._bloatware_worker: Optional[BloatwareScanWorker] = None
         self._init_ui()
-        self.refresh_all()
+
+    def lazy_load(self) -> None:
+        """Query tweaks and bloatware on demand when page is first activated."""
+        if not self._loaded:
+            self.refresh_all()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self.lazy_load()
 
     def _init_ui(self) -> None:
         layout = QVBoxLayout(self)
@@ -148,6 +171,7 @@ class TweaksPage(QWidget):
         b_layout.addWidget(self.table_bloatware)
 
     def refresh_all(self) -> None:
+        self._loaded = True
         self._refresh_privacy_tweaks()
         self._refresh_bloatware_list()
 
@@ -228,52 +252,69 @@ class TweaksPage(QWidget):
             QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), f"{tr('msg_error_title', 'Xatolik')}:\n{msg}")
 
     def _refresh_bloatware_list(self) -> None:
-        self.bloatware_apps = self.manager.get_bloatware_status()
-        self.table_bloatware.setRowCount(len(self.bloatware_apps))
+        if self._bloatware_worker and self._bloatware_worker.isRunning():
+            return
 
-        for row, app in enumerate(self.bloatware_apps):
-            # Name
-            self.table_bloatware.setItem(row, 0, QTableWidgetItem(f"  {app.name}"))
+        if self.table_bloatware.rowCount() == 0:
+            self.table_bloatware.setRowCount(1)
+            item_loading = QTableWidgetItem(f"  {tr('loading_bloatware', '⏳ Windows AppX paketlari tekshirilmoqda...')}")
+            self.table_bloatware.setItem(0, 0, item_loading)
 
-            # Category
-            item_cat = QTableWidgetItem(app.category)
-            item_cat.setTextAlignment(Qt.AlignCenter)
-            self.table_bloatware.setItem(row, 1, item_cat)
+        self._bloatware_worker = BloatwareScanWorker(self.manager, self)
+        self._bloatware_worker.finished.connect(self._on_bloatware_scanned)
+        self._bloatware_worker.start()
 
-            # Status
-            if app.installed:
-                item_stat = QTableWidgetItem("⚠️ O'rnatilgan")
-                item_stat.setForeground(Qt.yellow)
-            else:
-                item_stat = QTableWidgetItem("✅ Mavjud emas")
-                item_stat.setForeground(Qt.gray)
-            item_stat.setTextAlignment(Qt.AlignCenter)
-            self.table_bloatware.setItem(row, 2, item_stat)
+    def _on_bloatware_scanned(self, apps: List[BloatwareApp]) -> None:
+        self.bloatware_apps = apps
+        self.table_bloatware.setUpdatesEnabled(False)
+        try:
+            self.table_bloatware.setRowCount(len(self.bloatware_apps))
 
-            # Action button
-            if app.installed:
-                btn_remove = QPushButton("🗑️ O'chirish")
-                btn_remove.setStyleSheet("""
-                    QPushButton {
-                        background-color: #EF4444;
-                        color: white;
-                        font-weight: 600;
-                        font-size: 11px;
-                        border-radius: 4px;
-                        padding: 4px 8px;
-                    }
-                    QPushButton:hover {
-                        background-color: #DC2626;
-                    }
-                """)
-                btn_remove.setCursor(Qt.PointingHandCursor)
-                btn_remove.clicked.connect(lambda _, a=app: self._on_remove_bloatware_clicked(a))
-                self.table_bloatware.setCellWidget(row, 3, btn_remove)
-            else:
-                lbl_clean = QLabel("Toza")
-                lbl_clean.setAlignment(Qt.AlignCenter)
-                lbl_clean.setStyleSheet("color: #6B7280; font-size: 11px;")
-                self.table_bloatware.setCellWidget(row, 3, lbl_clean)
+            for row, app in enumerate(self.bloatware_apps):
+                # Name
+                self.table_bloatware.setItem(row, 0, QTableWidgetItem(f"  {app.name}"))
+
+                # Category
+                item_cat = QTableWidgetItem(app.category)
+                item_cat.setTextAlignment(Qt.AlignCenter)
+                self.table_bloatware.setItem(row, 1, item_cat)
+
+                # Status
+                if app.installed:
+                    item_stat = QTableWidgetItem("⚠️ O'rnatilgan")
+                    item_stat.setForeground(Qt.yellow)
+                else:
+                    item_stat = QTableWidgetItem("✅ Mavjud emas")
+                    item_stat.setForeground(Qt.gray)
+                item_stat.setTextAlignment(Qt.AlignCenter)
+                self.table_bloatware.setItem(row, 2, item_stat)
+
+                # Action button
+                if app.installed:
+                    btn_remove = QPushButton("🗑️ O'chirish")
+                    btn_remove.setStyleSheet("""
+                        QPushButton {
+                            background-color: #EF4444;
+                            color: white;
+                            font-weight: 600;
+                            font-size: 11px;
+                            border-radius: 4px;
+                            padding: 4px 8px;
+                        }
+                        QPushButton:hover {
+                            background-color: #DC2626;
+                        }
+                    """)
+                    btn_remove.setCursor(Qt.PointingHandCursor)
+                    btn_remove.clicked.connect(lambda _, a=app: self._on_remove_bloatware_clicked(a))
+                    self.table_bloatware.setCellWidget(row, 3, btn_remove)
+                else:
+                    lbl_clean = QLabel("Toza")
+                    lbl_clean.setAlignment(Qt.AlignCenter)
+                    lbl_clean.setStyleSheet("color: #6B7280; font-size: 11px;")
+                    self.table_bloatware.setCellWidget(row, 3, lbl_clean)
+        finally:
+            self.table_bloatware.setUpdatesEnabled(True)
 
     def _on_remove_bloatware_clicked(self, app: BloatwareApp) -> None:
         reply = QMessageBox.question(

@@ -423,6 +423,11 @@ class MainWindow(QMainWindow):
         for btn, idx in self.nav_buttons:
             btn.setChecked(idx == page_index)
 
+        # Trigger on-demand lazy loading if target page supports it
+        target_page = self.stack.widget(page_index)
+        if target_page and hasattr(target_page, "lazy_load"):
+            target_page.lazy_load()
+
     def _on_dashboard_start_scan(self, categories: Optional[List[str]] = None) -> None:
         target_cats = categories if isinstance(categories, list) else None
         logger.info(f"Scan triggered. Target categories: {target_cats or 'ALL_ENABLED'}")
@@ -492,5 +497,13 @@ class MainWindow(QMainWindow):
             get_localization().unregister_listener(self.retranslate_ui)
         except Exception:
             pass
+        # Cleanly stop timers and background workers
+        if hasattr(self, "page_hardware") and hasattr(self.page_hardware, "timer"):
+            self.page_hardware.timer.stop()
+        if hasattr(self, "page_turbo") and hasattr(self.page_turbo, "timer"):
+            self.page_turbo.timer.stop()
+        if hasattr(self, "page_tweaks") and hasattr(self.page_tweaks, "_bloatware_worker") and self.page_tweaks._bloatware_worker:
+            if self.page_tweaks._bloatware_worker.isRunning():
+                self.page_tweaks._bloatware_worker.terminate()
         super().closeEvent(event)
 

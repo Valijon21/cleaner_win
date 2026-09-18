@@ -33,11 +33,20 @@ class HardwarePage(QWidget):
         self.specs = self.engine.get_hardware_specs()
         self._init_ui()
 
-        # 1.5s refresh timer for live metrics
+        # Refresh timer for live telemetry (active only while page is visible)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._update_live_metrics)
-        self.timer.start(1500)
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
         self._update_live_metrics()
+        if not self.timer.isActive():
+            self.timer.start(1500)
+
+    def hideEvent(self, event) -> None:
+        super().hideEvent(event)
+        if self.timer.isActive():
+            self.timer.stop()
 
     def _init_ui(self) -> None:
         outer_layout = QVBoxLayout(self)

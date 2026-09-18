@@ -33,8 +33,17 @@ class StartupPage(QWidget):
         super().__init__(parent)
         self.manager = StartupManager()
         self.items: List[StartupItem] = []
+        self._loaded: bool = False
         self._init_ui()
-        self.refresh_items()
+
+    def lazy_load(self) -> None:
+        """Load startup autorun items on demand when the page is first activated."""
+        if not self._loaded:
+            self.refresh_items()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self.lazy_load()
 
     def _init_ui(self) -> None:
         layout = QVBoxLayout(self)
@@ -132,6 +141,7 @@ class StartupPage(QWidget):
 
     def refresh_items(self) -> None:
         """Scan and populate startup items."""
+        self._loaded = True
         self.items = self.manager.get_all_startup_items()
         total = len(self.items)
         enabled = sum(1 for x in self.items if x.enabled)
@@ -166,57 +176,61 @@ class StartupPage(QWidget):
         self._populate_table(filtered)
 
     def _populate_table(self, items: List[StartupItem]) -> None:
-        self.table.setRowCount(len(items))
+        self.table.setUpdatesEnabled(False)
+        try:
+            self.table.setRowCount(len(items))
 
-        for row, it in enumerate(items):
-            # Name
-            item_name = QTableWidgetItem(f"  {it.name}")
-            if it.risk_level == RiskLevel.BLOCKED:
-                item_name.setToolTip("Windows tizim fayli — o'chirish taqiqlanadi")
-            self.table.setItem(row, 0, item_name)
+            for row, it in enumerate(items):
+                # Name
+                item_name = QTableWidgetItem(f"  {it.name}")
+                if it.risk_level == RiskLevel.BLOCKED:
+                    item_name.setToolTip("Windows tizim fayli — o'chirish taqiqlanadi")
+                self.table.setItem(row, 0, item_name)
 
-            # Publisher
-            item_pub = QTableWidgetItem(it.publisher or "Noma'lum")
-            item_pub.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 1, item_pub)
+                # Publisher
+                item_pub = QTableWidgetItem(it.publisher or "Noma'lum")
+                item_pub.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, 1, item_pub)
 
-            # Impact badge
-            item_impact = QTableWidgetItem(it.impact)
-            item_impact.setTextAlignment(Qt.AlignCenter)
-            if it.impact == "High":
-                item_impact.setForeground(Qt.red)
-            elif it.impact == "Medium":
-                item_impact.setForeground(Qt.yellow)
-            else:
-                item_impact.setForeground(Qt.green)
-            self.table.setItem(row, 2, item_impact)
-
-            # Location
-            item_loc = QTableWidgetItem(it.location_type)
-            item_loc.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 3, item_loc)
-
-            # Status
-            status_text = "🟢 Faol" if it.enabled else "⚪ O'chirilgan"
-            item_status = QTableWidgetItem(status_text)
-            item_status.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 4, item_status)
-
-            # Action button
-            if it.risk_level == RiskLevel.BLOCKED:
-                lbl_blocked = QLabel("🛡️ Himoyalangan")
-                lbl_blocked.setAlignment(Qt.AlignCenter)
-                lbl_blocked.setStyleSheet("color: #6B7280; font-size: 11px;")
-                self.table.setCellWidget(row, 5, lbl_blocked)
-            else:
-                btn_toggle = QPushButton("O'chirish" if it.enabled else "Yoqish")
-                btn_toggle.setCursor(Qt.PointingHandCursor)
-                if it.enabled:
-                    btn_toggle.setStyleSheet("background-color: #EF4444; color: white; border-radius: 4px; padding: 4px;")
+                # Impact badge
+                item_impact = QTableWidgetItem(it.impact)
+                item_impact.setTextAlignment(Qt.AlignCenter)
+                if it.impact == "High":
+                    item_impact.setForeground(Qt.red)
+                elif it.impact == "Medium":
+                    item_impact.setForeground(Qt.yellow)
                 else:
-                    btn_toggle.setStyleSheet("background-color: #10B981; color: white; border-radius: 4px; padding: 4px;")
-                btn_toggle.clicked.connect(lambda _, item=it: self._on_toggle_clicked(item))
-                self.table.setCellWidget(row, 5, btn_toggle)
+                    item_impact.setForeground(Qt.green)
+                self.table.setItem(row, 2, item_impact)
+
+                # Location
+                item_loc = QTableWidgetItem(it.location_type)
+                item_loc.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, 3, item_loc)
+
+                # Status
+                status_text = "🟢 Faol" if it.enabled else "⚪ O'chirilgan"
+                item_status = QTableWidgetItem(status_text)
+                item_status.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, 4, item_status)
+
+                # Action button
+                if it.risk_level == RiskLevel.BLOCKED:
+                    lbl_blocked = QLabel("🛡️ Himoyalangan")
+                    lbl_blocked.setAlignment(Qt.AlignCenter)
+                    lbl_blocked.setStyleSheet("color: #6B7280; font-size: 11px;")
+                    self.table.setCellWidget(row, 5, lbl_blocked)
+                else:
+                    btn_toggle = QPushButton("O'chirish" if it.enabled else "Yoqish")
+                    btn_toggle.setCursor(Qt.PointingHandCursor)
+                    if it.enabled:
+                        btn_toggle.setStyleSheet("background-color: #EF4444; color: white; border-radius: 4px; padding: 4px;")
+                    else:
+                        btn_toggle.setStyleSheet("background-color: #10B981; color: white; border-radius: 4px; padding: 4px;")
+                    btn_toggle.clicked.connect(lambda _, item=it: self._on_toggle_clicked(item))
+                    self.table.setCellWidget(row, 5, btn_toggle)
+        finally:
+            self.table.setUpdatesEnabled(True)
 
     def _populate_filters(self) -> None:
         cur_idx = self.combo_filter.currentIndex() if hasattr(self, "combo_filter") and self.combo_filter.count() > 0 else 0

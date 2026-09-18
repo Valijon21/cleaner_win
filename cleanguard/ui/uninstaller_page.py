@@ -136,8 +136,17 @@ class UninstallerPage(QWidget):
         super().__init__(parent)
         self.manager = AppUninstallerManager()
         self.apps: List[InstalledApp] = []
+        self._loaded: bool = False
         self._init_ui()
-        self.refresh_apps()
+
+    def lazy_load(self) -> None:
+        """Query installed applications on demand when the page is first activated."""
+        if not self._loaded:
+            self.refresh_apps()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self.lazy_load()
 
     def _init_ui(self) -> None:
         layout = QVBoxLayout(self)
@@ -199,6 +208,7 @@ class UninstallerPage(QWidget):
         layout.addWidget(self.table)
 
     def refresh_apps(self) -> None:
+        self._loaded = True
         self.apps = self.manager.get_installed_apps()
         self.lbl_count.setText(f"Jami: {len(self.apps)} ta dastur")
         self._populate_table(self.apps)
@@ -216,47 +226,51 @@ class UninstallerPage(QWidget):
         self._populate_table(filtered)
 
     def _populate_table(self, apps: List[InstalledApp]) -> None:
-        self.table.setRowCount(len(apps))
+        self.table.setUpdatesEnabled(False)
+        try:
+            self.table.setRowCount(len(apps))
 
-        for row, a in enumerate(apps):
-            # Name
-            self.table.setItem(row, 0, QTableWidgetItem(f"  {a.name}"))
+            for row, a in enumerate(apps):
+                # Name
+                self.table.setItem(row, 0, QTableWidgetItem(f"  {a.name}"))
 
-            # Publisher
-            item_pub = QTableWidgetItem(a.publisher)
-            item_pub.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 1, item_pub)
+                # Publisher
+                item_pub = QTableWidgetItem(a.publisher)
+                item_pub.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, 1, item_pub)
 
-            # Version
-            item_ver = QTableWidgetItem(a.version or "--")
-            item_ver.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 2, item_ver)
+                # Version
+                item_ver = QTableWidgetItem(a.version or "--")
+                item_ver.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, 2, item_ver)
 
-            # Size
-            size_str = format_bytes(a.estimated_size) if a.estimated_size > 0 else "--"
-            item_size = QTableWidgetItem(size_str)
-            item_size.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 3, item_size)
+                # Size
+                size_str = format_bytes(a.estimated_size) if a.estimated_size > 0 else "--"
+                item_size = QTableWidgetItem(size_str)
+                item_size.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, 3, item_size)
 
-            # Actions cell (Uninstall + Leftovers)
-            cell_widget = QWidget()
-            cell_layout = QHBoxLayout(cell_widget)
-            cell_layout.setContentsMargins(4, 2, 4, 2)
-            cell_layout.setSpacing(6)
+                # Actions cell (Uninstall + Leftovers)
+                cell_widget = QWidget()
+                cell_layout = QHBoxLayout(cell_widget)
+                cell_layout.setContentsMargins(4, 2, 4, 2)
+                cell_layout.setSpacing(6)
 
-            btn_uninstall = QPushButton(tr("tbl_btn_uninstall", "O'chirish"))
-            btn_uninstall.setStyleSheet("background-color: #EF4444; color: white; border-radius: 4px; padding: 3px 8px; font-size: 11px;")
-            btn_uninstall.setCursor(Qt.PointingHandCursor)
-            btn_uninstall.clicked.connect(lambda _, app=a: self._on_uninstall_clicked(app))
+                btn_uninstall = QPushButton(tr("tbl_btn_uninstall", "O'chirish"))
+                btn_uninstall.setStyleSheet("background-color: #EF4444; color: white; border-radius: 4px; padding: 3px 8px; font-size: 11px;")
+                btn_uninstall.setCursor(Qt.PointingHandCursor)
+                btn_uninstall.clicked.connect(lambda _, app=a: self._on_uninstall_clicked(app))
 
-            btn_leftovers = QPushButton(tr("tbl_btn_leftovers", "Qoldiqlar"))
-            btn_leftovers.setStyleSheet("background-color: #3B82F6; color: white; border-radius: 4px; padding: 3px 8px; font-size: 11px;")
-            btn_leftovers.setCursor(Qt.PointingHandCursor)
-            btn_leftovers.clicked.connect(lambda _, app=a: self._on_leftovers_clicked(app))
+                btn_leftovers = QPushButton(tr("tbl_btn_leftovers", "Qoldiqlar"))
+                btn_leftovers.setStyleSheet("background-color: #3B82F6; color: white; border-radius: 4px; padding: 3px 8px; font-size: 11px;")
+                btn_leftovers.setCursor(Qt.PointingHandCursor)
+                btn_leftovers.clicked.connect(lambda _, app=a: self._on_leftovers_clicked(app))
 
-            cell_layout.addWidget(btn_uninstall)
-            cell_layout.addWidget(btn_leftovers)
-            self.table.setCellWidget(row, 4, cell_widget)
+                cell_layout.addWidget(btn_uninstall)
+                cell_layout.addWidget(btn_leftovers)
+                self.table.setCellWidget(row, 4, cell_widget)
+        finally:
+            self.table.setUpdatesEnabled(True)
 
     def _on_uninstall_clicked(self, app: InstalledApp) -> None:
         reply = QMessageBox.question(

@@ -226,12 +226,12 @@ def test_sidebar_scroll_and_14_modules(qapp, tmp_path):
     assert scroll is not None
     assert scroll.widgetResizable() is True
 
-    # 2. Exactly 14 navigation buttons across 4 enterprise groups
-    assert len(win.nav_buttons) == 14
+    # 2. Exactly 15 navigation buttons across 4 enterprise groups
+    assert len(win.nav_buttons) == 15
     assert len(win.nav_section_labels) == 4
-    assert win.stack.count() == 15
+    assert win.stack.count() == 16
 
-    # 3. Test navigation through all 14 views
+    # 3. Test navigation through all 15 views
     for btn, page_idx in win.nav_buttons:
         win.navigate_to(page_idx)
         assert win.stack.currentIndex() == page_idx
@@ -241,7 +241,7 @@ def test_sidebar_scroll_and_14_modules(qapp, tmp_path):
     loc = get_localization()
     for lang in ["en", "ru", "uz"]:
         loc.set_language(lang)
-        assert len(win.nav_buttons) == 14
+        assert len(win.nav_buttons) == 15
 
     # Cleanly teardown
     if hasattr(win.page_hardware, "timer"):

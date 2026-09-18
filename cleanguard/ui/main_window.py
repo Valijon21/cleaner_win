@@ -36,6 +36,7 @@ from cleanguard.ui.tweaks_page import TweaksPage
 from cleanguard.ui.network_page import NetworkPage
 from cleanguard.ui.registry_page import RegistryPage
 from cleanguard.ui.hardware_page import HardwarePage
+from cleanguard.ui.large_files_page import LargeFilesPage
 from cleanguard.ui.tray import CleanGuardTrayIcon, get_app_icon
 from cleanguard.services.scan_service import ScanWorker
 from cleanguard.services.cleanup_service import CleanupWorker
@@ -152,6 +153,7 @@ class MainWindow(QMainWindow):
                 ("📦 " + tr("nav_uninstaller"), 10),
                 ("🧩 " + tr("nav_registry"), 13),
                 ("👥 " + tr("nav_duplicates"), 8),
+                ("🐘 " + tr("nav_large_files", "Katta fayllar"), 15),
                 ("📈 " + tr("nav_hardware"), 14),
             ]),
             ("nav_sec_system", "TIZIM & SOZLAMALAR", [
@@ -252,6 +254,7 @@ class MainWindow(QMainWindow):
         self.page_network = NetworkPage()
         self.page_registry = RegistryPage()
         self.page_hardware = HardwarePage()
+        self.page_large_files = LargeFilesPage()
 
         self.stack.addWidget(self.page_dashboard)   # 0
         self.stack.addWidget(self.page_scan)        # 1
@@ -268,6 +271,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.page_network)     # 12
         self.stack.addWidget(self.page_registry)    # 13
         self.stack.addWidget(self.page_hardware)    # 14
+        self.stack.addWidget(self.page_large_files) # 15
 
         shell_layout.addWidget(self.stack)
 
@@ -312,6 +316,10 @@ class MainWindow(QMainWindow):
 
     def _shutdown_workers(self) -> None:
         """Safely stop and join all background threads before window destruction."""
+        try:
+            get_localization().unregister_listener(self.retranslate_ui)
+        except Exception:
+            pass
         if hasattr(self, "storage_monitor") and self.storage_monitor is not None:
             self.storage_monitor.stop()
         if hasattr(self, "scan_worker") and self.scan_worker is not None and self.scan_worker.isRunning():
@@ -320,6 +328,17 @@ class MainWindow(QMainWindow):
         if hasattr(self, "cleanup_worker") and self.cleanup_worker is not None and self.cleanup_worker.isRunning():
             self.cleanup_worker.cancel()
             self.cleanup_worker.wait(1500)
+        if hasattr(self, "page_hardware") and hasattr(self.page_hardware, "timer"):
+            self.page_hardware.timer.stop()
+        if hasattr(self, "page_turbo") and hasattr(self.page_turbo, "timer"):
+            self.page_turbo.timer.stop()
+        if hasattr(self, "page_tweaks") and hasattr(self.page_tweaks, "_bloatware_worker") and self.page_tweaks._bloatware_worker:
+            if self.page_tweaks._bloatware_worker.isRunning():
+                self.page_tweaks._bloatware_worker.terminate()
+        if hasattr(self, "page_large_files") and hasattr(self.page_large_files, "_scan_worker") and self.page_large_files._scan_worker:
+            if self.page_large_files._scan_worker.isRunning():
+                self.page_large_files._scan_worker.cancel()
+                self.page_large_files._scan_worker.wait(1000)
 
     def _on_force_exit(self) -> None:
         """Terminate application completely without minimizing to tray."""
@@ -341,21 +360,6 @@ class MainWindow(QMainWindow):
             if request_elevation():
                 self._on_force_exit()
 
-    def closeEvent(self, event) -> None:
-        """Handle window close: minimize to tray if enabled, or exit."""
-        if self._force_quit:
-            self._shutdown_workers()
-            event.accept()
-            return
-
-        if self.config.get("minimize_to_tray", False):
-            event.ignore()
-            self.hide()
-            self.tray_icon.show_minimized_notification()
-        else:
-            self._shutdown_workers()
-            event.accept()
-
     def retranslate_ui(self, lang_code: str = "") -> None:
         """Update navigation labels, tray actions, and subpages dynamically."""
         for lbl_sec, key, default in self.nav_section_labels:
@@ -372,6 +376,7 @@ class MainWindow(QMainWindow):
             ("📦 " + tr("nav_uninstaller"), 10),
             ("🧩 " + tr("nav_registry"), 13),
             ("👥 " + tr("nav_duplicates"), 8),
+            ("🐘 " + tr("nav_large_files", "Katta fayllar"), 15),
             ("📈 " + tr("nav_hardware"), 14),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
@@ -416,6 +421,8 @@ class MainWindow(QMainWindow):
             self.page_registry.retranslate_ui(lang_code)
         if hasattr(self, "page_hardware") and hasattr(self.page_hardware, "retranslate_ui"):
             self.page_hardware.retranslate_ui(lang_code)
+        if hasattr(self, "page_large_files") and hasattr(self.page_large_files, "retranslate_ui"):
+            self.page_large_files.retranslate_ui(lang_code)
 
     def _on_nav_button_clicked(self, page_index: int) -> None:
         """Handle sidebar navigation clicks, auto-starting scan if scan tab clicked."""
@@ -515,17 +522,6 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
 
-        try:
-            get_localization().unregister_listener(self.retranslate_ui)
-        except Exception:
-            pass
-        # Cleanly stop timers and background workers
-        if hasattr(self, "page_hardware") and hasattr(self.page_hardware, "timer"):
-            self.page_hardware.timer.stop()
-        if hasattr(self, "page_turbo") and hasattr(self.page_turbo, "timer"):
-            self.page_turbo.timer.stop()
-        if hasattr(self, "page_tweaks") and hasattr(self.page_tweaks, "_bloatware_worker") and self.page_tweaks._bloatware_worker:
-            if self.page_tweaks._bloatware_worker.isRunning():
-                self.page_tweaks._bloatware_worker.terminate()
+        self._shutdown_workers()
         super().closeEvent(event)
 

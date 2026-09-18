@@ -188,3 +188,8 @@ class NetworkOptimizer:
             logger.debug("Error getting adapters: %s", ex)
 
         return adapters
+
+
+# Module-level convenience functions
+flush_dns = NetworkOptimizer.flush_dns
+optimize_tcp_ip = NetworkOptimizer.optimize_tcp_ip

@@ -14,12 +14,15 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QScrollArea,
     QFrame,
+    QProgressBar,
+    QMessageBox,
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from cleanguard.windows.drives import enumerate_drives
 from cleanguard.windows.os_info import get_windows_version
 from cleanguard.ui.widgets.cards import StatCard, DriveCard, CareModuleCard
 from cleanguard.ui.widgets.buttons import CircularScanButton
+from cleanguard.services.smart_care_service import SmartCareWorker, SmartCareResult
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
 from cleanguard.localization import tr
@@ -48,6 +51,7 @@ class DashboardPage(QWidget):
         self.care_cards: Dict[str, CareModuleCard] = {}
         self.category_cards = self.care_cards  # Backward-compatibility alias
         self._all_selected = True
+        self.smart_care_worker: Optional[SmartCareWorker] = None
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -105,15 +109,82 @@ class DashboardPage(QWidget):
 
         main_layout.addWidget(self.health_banner)
 
-        # 3. Centerpiece: Pulsing Circular SCAN Button
+        # 3. Centerpiece: Pulsing Circular SCAN Button + 1-Click Smart Care
         center_container = QWidget()
         center_layout = QVBoxLayout(center_container)
         center_layout.setContentsMargins(0, 12, 0, 12)
+        center_layout.setSpacing(14)
         center_layout.setAlignment(Qt.AlignCenter)
 
         self.btn_circular_scan = CircularScanButton()
         self.btn_circular_scan.clicked.connect(self._on_scan_clicked)
         center_layout.addWidget(self.btn_circular_scan, alignment=Qt.AlignCenter)
+
+        self.btn_smart_care = QPushButton("⚡ " + tr("btn_smart_care", "1-Click Smart Care"))
+        self.btn_smart_care.setCursor(Qt.PointingHandCursor)
+        self.btn_smart_care.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #10B981, stop:1 #06B6D4);
+                color: #FFFFFF;
+                font-size: 13px;
+                font-weight: 700;
+                border-radius: 18px;
+                padding: 9px 28px;
+                border: 1px solid #34D399;
+                letter-spacing: 0.5px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #059669, stop:1 #0891B2);
+                border: 1px solid #6EE7B7;
+            }
+            QPushButton:pressed {
+                background-color: #047857;
+            }
+            QPushButton:disabled {
+                background: #374151;
+                color: #9CA3AF;
+                border: 1px solid #4B5563;
+            }
+        """)
+        self.btn_smart_care.clicked.connect(self._on_smart_care_clicked)
+        center_layout.addWidget(self.btn_smart_care, alignment=Qt.AlignCenter)
+
+        # Smart Care Progress Container (hidden initially)
+        self.smart_care_progress_widget = QWidget()
+        self.smart_care_progress_widget.setFixedWidth(360)
+        self.smart_care_progress_widget.setVisible(False)
+        p_layout = QVBoxLayout(self.smart_care_progress_widget)
+        p_layout.setContentsMargins(0, 4, 0, 4)
+        p_layout.setSpacing(6)
+
+        self.lbl_smart_care_status = QLabel(tr("smart_care_running", "Tizim optimallashtirilmoqda..."))
+        self.lbl_smart_care_status.setStyleSheet("font-size: 11px; font-weight: 600; color: #34D399;")
+        self.lbl_smart_care_status.setAlignment(Qt.AlignCenter)
+        p_layout.addWidget(self.lbl_smart_care_status)
+
+        self.smart_care_progress_bar = QProgressBar()
+        self.smart_care_progress_bar.setRange(0, 100)
+        self.smart_care_progress_bar.setValue(0)
+        self.smart_care_progress_bar.setTextVisible(True)
+        self.smart_care_progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: #1F2937;
+                border: 1px solid #374151;
+                border-radius: 6px;
+                height: 14px;
+                text-align: center;
+                color: white;
+                font-size: 10px;
+                font-weight: 700;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #10B981, stop:1 #06B6D4);
+                border-radius: 5px;
+            }
+        """)
+        p_layout.addWidget(self.smart_care_progress_bar)
+
+        center_layout.addWidget(self.smart_care_progress_widget, alignment=Qt.AlignCenter)
 
         main_layout.addWidget(center_container)
 
@@ -237,6 +308,49 @@ class DashboardPage(QWidget):
         self.card_files.set_value(format_number(int(stats.get("total_files_deleted", 0.0))))
         self.refresh_drives()
 
+    def _on_smart_care_clicked(self) -> None:
+        """Trigger 1-Click Smart Care all-in-one system optimization."""
+        if self.smart_care_worker and self.smart_care_worker.isRunning():
+            return
+
+        self.btn_smart_care.setEnabled(False)
+        self.btn_circular_scan.setEnabled(False)
+        self.smart_care_progress_widget.setVisible(True)
+        self.smart_care_progress_bar.setValue(0)
+        self.lbl_smart_care_status.setText(tr("smart_care_running", "Tizim optimallashtirilmoqda..."))
+
+        self.smart_care_worker = SmartCareWorker(self.db, parent=self)
+        self.smart_care_worker.stage_changed.connect(self._on_smart_care_stage)
+        self.smart_care_worker.finished.connect(self._on_smart_care_finished)
+        self.smart_care_worker.start()
+
+    def _on_smart_care_stage(self, stage_text: str, percent: int = 0) -> None:
+        self.lbl_smart_care_status.setText(stage_text)
+        self.smart_care_progress_bar.setValue(percent)
+
+    def _on_smart_care_finished(self, result: SmartCareResult) -> None:
+        self.btn_smart_care.setEnabled(True)
+        self.btn_circular_scan.setEnabled(True)
+        self.smart_care_progress_widget.setVisible(False)
+
+        self.refresh_stats()
+        self.update_health_status(is_good=True)
+
+        summary_text = tr(
+            "smart_care_summary",
+            junk_size=format_bytes(result.junk_cleaned_bytes),
+            ram_freed=format_bytes(result.ram_freed_bytes),
+            reg_count=result.registry_issues_fixed,
+            update_size=format_bytes(result.update_cache_cleaned_bytes),
+            total_space=format_bytes(result.total_space_reclaimed_bytes),
+        )
+
+        QMessageBox.information(
+            self,
+            tr("smart_care_complete_title", "Smart Care optimizatsiyasi yakunlandi!"),
+            summary_text,
+        )
+
     def update_health_status(self, is_good: bool) -> None:
         """Switch banner styling and text between Good and Fair/Needs Attention."""
         if is_good:
@@ -262,6 +376,8 @@ class DashboardPage(QWidget):
         self.lbl_health_desc.setText(tr("health_fair_desc"))
 
         self.btn_circular_scan.retranslate_ui()
+        if hasattr(self, "btn_smart_care"):
+            self.btn_smart_care.setText("⚡ " + tr("btn_smart_care", "1-Click Smart Care"))
         self.lbl_care_title.setText(tr("care_selector_title"))
         btn_text = tr("deselect_all") if self._all_selected else tr("select_all")
         self.btn_toggle_all.setText(btn_text)

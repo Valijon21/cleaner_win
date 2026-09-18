@@ -20,8 +20,10 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from cleanguard.windows.tweaks import TweaksManager, PrivacyTweak, BloatwareApp
+from cleanguard.windows.updates import WindowsUpdateCleaner
 from cleanguard.windows.privileges import is_user_admin, request_elevation
 from cleanguard.localization import tr
+from cleanguard.utils.formatting import format_bytes
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("ui.tweaks")
@@ -40,15 +42,30 @@ class BloatwareScanWorker(QThread):
         self.finished.emit(apps)
 
 
+class DismCleanupWorker(QThread):
+    """Asynchronous worker for executing DISM Component Store cleanup."""
+    finished = pyqtSignal(bool, str)
+
+    def __init__(self, cleaner: WindowsUpdateCleaner, parent=None):
+        super().__init__(parent)
+        self.cleaner = cleaner
+
+    def run(self):
+        success, message = self.cleaner.run_dism_component_cleanup()
+        self.finished.emit(success, message)
+
+
 class TweaksPage(QWidget):
     """Modern interface for managing Windows bloatware and privacy/telemetry settings."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.manager = TweaksManager()
+        self.update_cleaner = WindowsUpdateCleaner()
         self.bloatware_apps: List[BloatwareApp] = []
         self._loaded: bool = False
         self._bloatware_worker: Optional[BloatwareScanWorker] = None
+        self._dism_worker: Optional[DismCleanupWorker] = None
         self._init_ui()
 
     def lazy_load(self) -> None:
@@ -85,7 +102,7 @@ class TweaksPage(QWidget):
         header_row.addWidget(self.btn_refresh)
         layout.addLayout(header_row)
 
-        # Tabs: 1) Privacy & Telemetry  2) Bloatware Apps
+        # Tabs: 1) Privacy & Telemetry  2) Bloatware Apps  3) Windows Update & WinSxS
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
@@ -118,6 +135,11 @@ class TweaksPage(QWidget):
         self.tab_bloatware = QWidget()
         self._init_bloatware_tab()
         self.tabs.addTab(self.tab_bloatware, tr("tweaks_tab_bloatware", "📦 Standart UWP Ilovalar (Bloatware)"))
+
+        # Tab 3: Windows Update & WinSxS
+        self.tab_updates = QWidget()
+        self._init_updates_tab()
+        self.tabs.addTab(self.tab_updates, tr("tweaks_tab_updates", "🔄 Windows Update va WinSxS"))
 
         layout.addWidget(self.tabs)
 
@@ -170,10 +192,115 @@ class TweaksPage(QWidget):
         self.table_bloatware.setAlternatingRowColors(True)
         b_layout.addWidget(self.table_bloatware)
 
+    def _init_updates_tab(self) -> None:
+        u_layout = QVBoxLayout(self.tab_updates)
+        u_layout.setContentsMargins(20, 20, 20, 20)
+        u_layout.setSpacing(16)
+
+        # Card 1: SoftwareDistribution Download Cache
+        card_update = QFrame()
+        card_update.setStyleSheet("""
+            QFrame {
+                background-color: #1F2937;
+                border: 1px solid #374151;
+                border-radius: 8px;
+                padding: 16px;
+            }
+        """)
+        u1_layout = QVBoxLayout(card_update)
+        u1_layout.setSpacing(10)
+
+        self.lbl_upd_cache_title = QLabel("💾 " + tr("updates_cache_title", "Windows Update yuklab olish keshi"))
+        self.lbl_upd_cache_title.setStyleSheet("font-size: 15px; font-weight: 700; color: #F9FAFB;")
+        u1_layout.addWidget(self.lbl_upd_cache_title)
+
+        self.lbl_upd_cache_desc = QLabel(tr("updates_cache_desc", "SoftwareDistribution\\Download papkasida saqlanuvchi vaqtinchalik yangilanish o'rnatuvchilari. Yangilanishlar o'rnatilgach xavfsiz tozalash mumkin."))
+        self.lbl_upd_cache_desc.setStyleSheet("font-size: 12px; color: #9CA3AF;")
+        self.lbl_upd_cache_desc.setWordWrap(True)
+        u1_layout.addWidget(self.lbl_upd_cache_desc)
+
+        row_upd = QHBoxLayout()
+        self.lbl_upd_size = QLabel(f"{tr('table_col_size', 'Hajmi')}: ...")
+        self.lbl_upd_size.setStyleSheet("font-size: 13px; font-weight: 600; color: #10B981;")
+        row_upd.addWidget(self.lbl_upd_size)
+        row_upd.addStretch()
+
+        self.btn_clean_upd = QPushButton("🧹 " + tr("btn_clean_update_cache", "Update keshini tozalash"))
+        self.btn_clean_upd.setCursor(Qt.PointingHandCursor)
+        self.btn_clean_upd.setStyleSheet("""
+            QPushButton {
+                background-color: #10B981;
+                color: white;
+                font-weight: 600;
+                font-size: 12px;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+            }
+        """)
+        self.btn_clean_upd.clicked.connect(self._on_clean_update_cache_clicked)
+        row_upd.addWidget(self.btn_clean_upd)
+        u1_layout.addLayout(row_upd)
+
+        u_layout.addWidget(card_update)
+
+        # Card 2: WinSxS Component Store (DISM)
+        card_dism = QFrame()
+        card_dism.setStyleSheet("""
+            QFrame {
+                background-color: #1F2937;
+                border: 1px solid #374151;
+                border-radius: 8px;
+                padding: 16px;
+            }
+        """)
+        u2_layout = QVBoxLayout(card_dism)
+        u2_layout.setSpacing(10)
+
+        self.lbl_dism_title = QLabel("🚀 " + tr("dism_title", "WinSxS Component Store tozalash (DISM)"))
+        self.lbl_dism_title.setStyleSheet("font-size: 15px; font-weight: 700; color: #F9FAFB;")
+        u2_layout.addWidget(self.lbl_dism_title)
+
+        self.lbl_dism_desc = QLabel(tr("dism_desc", "Eski va o'rniga yangisi kelgan Windows tizim komponentlarini Microsoft DISM rasmiy vositasi orqali tozalaydi. 10-25+ GB joy bo'shatishi mumkin."))
+        self.lbl_dism_desc.setStyleSheet("font-size: 12px; color: #9CA3AF;")
+        self.lbl_dism_desc.setWordWrap(True)
+        u2_layout.addWidget(self.lbl_dism_desc)
+
+        row_dism = QHBoxLayout()
+        self.lbl_dism_status = QLabel("Windows DISM: Tayyor")
+        self.lbl_dism_status.setStyleSheet("font-size: 13px; color: #D1D5DB;")
+        row_dism.addWidget(self.lbl_dism_status)
+        row_dism.addStretch()
+
+        self.btn_run_dism = QPushButton("⚡ " + tr("btn_run_dism", "Chuqur komponent tozalashni boshlash"))
+        self.btn_run_dism.setCursor(Qt.PointingHandCursor)
+        self.btn_run_dism.setStyleSheet("""
+            QPushButton {
+                background-color: #0284C7;
+                color: white;
+                font-weight: 600;
+                font-size: 12px;
+                border-radius: 6px;
+                padding: 6px 14px;
+            }
+            QPushButton:hover {
+                background-color: #0369A1;
+            }
+        """)
+        self.btn_run_dism.clicked.connect(self._on_run_dism_clicked)
+        row_dism.addWidget(self.btn_run_dism)
+        u2_layout.addLayout(row_dism)
+
+        u_layout.addWidget(card_dism)
+        u_layout.addStretch()
+
     def refresh_all(self) -> None:
         self._loaded = True
         self._refresh_privacy_tweaks()
         self._refresh_bloatware_list()
+        self._refresh_updates_status()
 
     def _refresh_privacy_tweaks(self) -> None:
         # Clear existing cards
@@ -332,6 +459,63 @@ class TweaksPage(QWidget):
             else:
                 QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), msg)
 
+    def _refresh_updates_status(self) -> None:
+        try:
+            sz = self.update_cleaner.get_cache_size()
+            self.lbl_upd_size.setText(f"{tr('table_col_size', 'Hajmi')}: {format_bytes(sz)}")
+        except Exception as ex:
+            logger.debug(f"Failed to query update cache size: {ex}")
+
+    def _on_clean_update_cache_clicked(self) -> None:
+        ok, reclaimed, msg = self.update_cleaner.clean_update_download_cache()
+        self._refresh_updates_status()
+        if ok:
+            QMessageBox.information(
+                self,
+                tr("msg_success_title", "Muvaffaqiyatli"),
+                tr("updates_cache_cleared", size=format_bytes(reclaimed)),
+            )
+        else:
+            QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), msg)
+
+    def _on_run_dism_clicked(self) -> None:
+        if not is_user_admin():
+            reply = QMessageBox.question(
+                self,
+                tr("msg_admin_required", "Administrator huquqi talab qilinadi"),
+                tr("msg_admin_restart_prompt", "DISM Component Store tozalash uchun Administrator huquqi zarur.\nCleanGuard ni Administrator rejimida qayta ishga tushirilsinmi?"),
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
+            )
+            if reply == QMessageBox.Yes:
+                request_elevation()
+            return
+
+        if self._dism_worker and self._dism_worker.isRunning():
+            return
+
+        self.btn_run_dism.setEnabled(False)
+        self.lbl_dism_status.setText("⏳ " + tr("dism_running", "DISM tozalanmoqda..."))
+        self._dism_worker = DismCleanupWorker(self.update_cleaner, self)
+        self._dism_worker.finished.connect(self._on_dism_finished)
+        self._dism_worker.start()
+
+    def _on_dism_finished(self, success: bool, message: str) -> None:
+        self.btn_run_dism.setEnabled(True)
+        self.lbl_dism_status.setText("Windows DISM: Tayyor")
+        if success:
+            QMessageBox.information(
+                self,
+                tr("msg_success_title", "Muvaffaqiyatli"),
+                f"{tr('dism_complete', 'DISM tozalash muvaffaqiyatli yakunlandi!')}\n\n{message[:300]}",
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                tr("msg_error_title", "Xatolik"),
+                f"{tr('msg_error_title', 'Xatolik')}:\n{message[:300]}",
+            )
+
     def retranslate_ui(self, lang_code: str = "") -> None:
         """Dynamically update labels on language switch."""
         self.lbl_title.setText("🛠️ " + tr("nav_tweaks", "Windows optimizatsiya va Maxfiylik"))
@@ -339,9 +523,17 @@ class TweaksPage(QWidget):
         self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
         self.tabs.setTabText(0, tr("tweaks_tab_privacy", "🛡️ Maxfiylik va Telemetriya (Privacy)"))
         self.tabs.setTabText(1, tr("tweaks_tab_bloatware", "📦 Standart UWP Ilovalar (Bloatware)"))
+        self.tabs.setTabText(2, tr("tweaks_tab_updates", "🔄 Windows Update va WinSxS"))
         self.table_bloatware.setHorizontalHeaderLabels([
             tr("tbl_app_name", "Ilova nomi"),
             tr("tbl_category", "Kategoriya"),
             tr("tbl_status", "Holati"),
             tr("tbl_action", "Amal"),
         ])
+        self.lbl_upd_cache_title.setText("💾 " + tr("updates_cache_title", "Windows Update yuklab olish keshi"))
+        self.lbl_upd_cache_desc.setText(tr("updates_cache_desc", "SoftwareDistribution\\Download papkasida saqlanuvchi vaqtinchalik yangilanish o'rnatuvchilari. Yangilanishlar o'rnatilgach xavfsiz tozalash mumkin."))
+        self.btn_clean_upd.setText("🧹 " + tr("btn_clean_update_cache", "Update keshini tozalash"))
+        self.lbl_dism_title.setText("🚀 " + tr("dism_title", "WinSxS Component Store tozalash (DISM)"))
+        self.lbl_dism_desc.setText(tr("dism_desc", "Eski va o'rniga yangisi kelgan Windows tizim komponentlarini Microsoft DISM rasmiy vositasi orqali tozalaydi. 10-25+ GB joy bo'shatishi mumkin."))
+        self.btn_run_dism.setText("⚡ " + tr("btn_run_dism", "Chuqur komponent tozalashni boshlash"))
+        self._refresh_updates_status()

@@ -95,3 +95,8 @@ class MemoryOptimizer:
         freed = max(0, after["avail_bytes"] - before["avail_bytes"])
         logger.info("RAM flush completed: %d processes trimmed, ~%d bytes freed.", trimmed_count, freed)
         return trimmed_count, freed
+
+
+# Module-level convenience functions
+flush_memory = MemoryOptimizer.flush_memory
+get_memory_info = MemoryOptimizer.get_memory_info

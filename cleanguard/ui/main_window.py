@@ -30,6 +30,7 @@ from cleanguard.ui.startup_page import StartupPage
 from cleanguard.ui.duplicates_page import DuplicatesPage
 from cleanguard.ui.turbo_page import TurboPage
 from cleanguard.ui.uninstaller_page import UninstallerPage
+from cleanguard.ui.tweaks_page import TweaksPage
 from cleanguard.ui.tray import CleanGuardTrayIcon
 from cleanguard.services.scan_service import ScanWorker
 from cleanguard.services.cleanup_service import CleanupWorker
@@ -105,6 +106,7 @@ class MainWindow(QMainWindow):
             ("👥 " + tr("nav_duplicates"), 8),
             ("⚡ " + tr("nav_turbo"), 9),
             ("📦 " + tr("nav_uninstaller"), 10),
+            ("🛠️ " + tr("nav_tweaks"), 11),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
             ("ℹ️ " + tr("nav_about"), 6),
@@ -181,6 +183,7 @@ class MainWindow(QMainWindow):
         self.page_duplicates = DuplicatesPage()
         self.page_turbo = TurboPage()
         self.page_uninstaller = UninstallerPage()
+        self.page_tweaks = TweaksPage()
 
         self.stack.addWidget(self.page_dashboard)   # 0
         self.stack.addWidget(self.page_scan)        # 1
@@ -193,6 +196,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.page_duplicates)  # 8
         self.stack.addWidget(self.page_turbo)       # 9
         self.stack.addWidget(self.page_uninstaller) # 10
+        self.stack.addWidget(self.page_tweaks)      # 11
 
         shell_layout.addWidget(self.stack)
 
@@ -291,6 +295,7 @@ class MainWindow(QMainWindow):
             ("👥 " + tr("nav_duplicates"), 8),
             ("⚡ " + tr("nav_turbo"), 9),
             ("📦 " + tr("nav_uninstaller"), 10),
+            ("🛠️ " + tr("nav_tweaks"), 11),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
             ("ℹ️ " + tr("nav_about"), 6),
@@ -315,6 +320,8 @@ class MainWindow(QMainWindow):
         self.page_history.retranslate_ui(lang_code)
         self.page_settings.retranslate_ui(lang_code)
         self.page_about.retranslate_ui()
+        if hasattr(self, "page_tweaks"):
+            self.page_tweaks.retranslate_ui(lang_code)
 
     def _on_nav_button_clicked(self, page_index: int) -> None:
         """Handle sidebar navigation clicks, auto-starting scan if scan tab clicked."""

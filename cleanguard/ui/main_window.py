@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QMessageBox,
     QApplication,
+    QScrollArea,
 )
 from PyQt5.QtCore import Qt
 from cleanguard.app.version import APP_NAME, APP_VERSION
@@ -65,8 +66,8 @@ class MainWindow(QMainWindow):
         self._force_quit = False
 
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION}")
-        self.resize(1080, 720)
-        self.setMinimumSize(900, 600)
+        self.resize(1180, 760)
+        self.setMinimumSize(960, 620)
         self.setStyleSheet(DARK_STYLESHEET)
 
         self._init_shell()
@@ -82,52 +83,99 @@ class MainWindow(QMainWindow):
         # 1. Sidebar Navigation
         sidebar = QFrame()
         sidebar.setObjectName("Sidebar")
-        sidebar.setFixedWidth(240)
+        sidebar.setFixedWidth(250)
         side_layout = QVBoxLayout(sidebar)
-        side_layout.setContentsMargins(12, 24, 12, 20)
-        side_layout.setSpacing(8)
+        side_layout.setContentsMargins(6, 16, 6, 12)
+        side_layout.setSpacing(6)
 
         # Brand / Logo Header
         brand_row = QHBoxLayout()
+        brand_row.setContentsMargins(8, 0, 8, 8)
+        brand_row.setSpacing(10)
         lbl_logo = QLabel("🛡️")
         lbl_logo.setStyleSheet("font-size: 24px;")
+
+        brand_col = QVBoxLayout()
+        brand_col.setSpacing(1)
         lbl_app = QLabel(APP_NAME)
-        lbl_app.setStyleSheet("font-size: 20px; font-weight: 800; color: #10B981; letter-spacing: 0.5px;")
+        lbl_app.setStyleSheet("font-size: 18px; font-weight: 800; color: #10B981; letter-spacing: 0.5px;")
+        lbl_badge = QLabel("PROFESSIONAL SUITE")
+        lbl_badge.setStyleSheet("font-size: 8px; font-weight: 800; color: #34D399; letter-spacing: 1.2px;")
+        brand_col.addWidget(lbl_app)
+        brand_col.addWidget(lbl_badge)
+
         brand_row.addWidget(lbl_logo)
-        brand_row.addWidget(lbl_app)
+        brand_row.addLayout(brand_col)
         brand_row.addStretch()
         side_layout.addLayout(brand_row)
-        side_layout.addSpacing(20)
 
-        # Navigation Buttons
+        # Scrollable Navigation Container
+        nav_scroll = QScrollArea()
+        nav_scroll.setObjectName("NavScrollArea")
+        nav_scroll.setWidgetResizable(True)
+        nav_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        nav_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        nav_container = QWidget()
+        nav_container_layout = QVBoxLayout(nav_container)
+        nav_container_layout.setContentsMargins(2, 4, 2, 4)
+        nav_container_layout.setSpacing(2)
+
+        # Navigation Groups & Buttons
         self.nav_buttons = []
-        nav_items = [
-            ("📊 " + tr("nav_dashboard"), 0),
-            ("🔍 " + tr("nav_scan"), 1),
-            ("📋 " + tr("nav_results"), 2),
-            ("🚀 " + tr("nav_startup"), 7),
-            ("👥 " + tr("nav_duplicates"), 8),
-            ("⚡ " + tr("nav_turbo"), 9),
-            ("📦 " + tr("nav_uninstaller"), 10),
-            ("🛠️ " + tr("nav_tweaks"), 11),
-            ("🌐 " + tr("nav_network"), 12),
-            ("🧩 " + tr("nav_registry"), 13),
-            ("📈 " + tr("nav_hardware"), 14),
-            ("📜 " + tr("nav_history"), 4),
-            ("⚙️ " + tr("nav_settings"), 5),
-            ("ℹ️ " + tr("nav_about"), 6),
+        self.nav_section_labels = []
+
+        nav_groups = [
+            ("nav_sec_core", "BOSHQARUV", [
+                ("📊 " + tr("nav_dashboard"), 0),
+                ("🔍 " + tr("nav_scan"), 1),
+                ("📋 " + tr("nav_results"), 2),
+            ]),
+            ("nav_sec_boost", "TEZLIK & OPTIMIZATSIYA", [
+                ("⚡ " + tr("nav_turbo"), 9),
+                ("🚀 " + tr("nav_startup"), 7),
+                ("🌐 " + tr("nav_network"), 12),
+                ("🛠️ " + tr("nav_tweaks"), 11),
+            ]),
+            ("nav_sec_tools", "TOZALASH & ASBOBLAR", [
+                ("📦 " + tr("nav_uninstaller"), 10),
+                ("🧩 " + tr("nav_registry"), 13),
+                ("👥 " + tr("nav_duplicates"), 8),
+                ("📈 " + tr("nav_hardware"), 14),
+            ]),
+            ("nav_sec_system", "TIZIM & SOZLAMALAR", [
+                ("📜 " + tr("nav_history"), 4),
+                ("⚙️ " + tr("nav_settings"), 5),
+                ("ℹ️ " + tr("nav_about"), 6),
+            ]),
         ]
 
-        for text, page_idx in nav_items:
-            btn = QPushButton(text)
-            btn.setObjectName("NavButton")
-            btn.setCheckable(True)
-            btn.setCursor(Qt.PointingHandCursor)
-            btn.clicked.connect(lambda checked, idx=page_idx: self._on_nav_button_clicked(idx))
-            side_layout.addWidget(btn)
-            self.nav_buttons.append((btn, page_idx))
+        for sec_key, sec_default, items in nav_groups:
+            lbl_sec = QLabel(tr(sec_key, sec_default))
+            lbl_sec.setStyleSheet("""
+                color: #6B7280;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.8px;
+                padding-left: 10px;
+                margin-top: 8px;
+                margin-bottom: 2px;
+            """)
+            nav_container_layout.addWidget(lbl_sec)
+            self.nav_section_labels.append((lbl_sec, sec_key, sec_default))
 
-        side_layout.addStretch()
+            for text, page_idx in items:
+                btn = QPushButton(text)
+                btn.setObjectName("NavButton")
+                btn.setCheckable(True)
+                btn.setCursor(Qt.PointingHandCursor)
+                btn.clicked.connect(lambda checked, idx=page_idx: self._on_nav_button_clicked(idx))
+                nav_container_layout.addWidget(btn)
+                self.nav_buttons.append((btn, page_idx))
+
+        nav_container_layout.addStretch()
+        nav_scroll.setWidget(nav_container)
+        side_layout.addWidget(nav_scroll, stretch=1)
 
         # UAC Administrator Elevation Action / Status Badge
         self.btn_elevation = None
@@ -299,17 +347,20 @@ class MainWindow(QMainWindow):
 
     def retranslate_ui(self, lang_code: str = "") -> None:
         """Update navigation labels, tray actions, and subpages dynamically."""
+        for lbl_sec, key, default in self.nav_section_labels:
+            lbl_sec.setText(tr(key, default))
+
         nav_titles = [
             ("📊 " + tr("nav_dashboard"), 0),
             ("🔍 " + tr("nav_scan"), 1),
             ("📋 " + tr("nav_results"), 2),
-            ("🚀 " + tr("nav_startup"), 7),
-            ("👥 " + tr("nav_duplicates"), 8),
             ("⚡ " + tr("nav_turbo"), 9),
-            ("📦 " + tr("nav_uninstaller"), 10),
-            ("🛠️ " + tr("nav_tweaks"), 11),
+            ("🚀 " + tr("nav_startup"), 7),
             ("🌐 " + tr("nav_network"), 12),
+            ("🛠️ " + tr("nav_tweaks"), 11),
+            ("📦 " + tr("nav_uninstaller"), 10),
             ("🧩 " + tr("nav_registry"), 13),
+            ("👥 " + tr("nav_duplicates"), 8),
             ("📈 " + tr("nav_hardware"), 14),
             ("📜 " + tr("nav_history"), 4),
             ("⚙️ " + tr("nav_settings"), 5),
@@ -335,13 +386,21 @@ class MainWindow(QMainWindow):
         self.page_history.retranslate_ui(lang_code)
         self.page_settings.retranslate_ui(lang_code)
         self.page_about.retranslate_ui()
-        if hasattr(self, "page_tweaks"):
+        if hasattr(self, "page_turbo") and hasattr(self.page_turbo, "retranslate_ui"):
+            self.page_turbo.retranslate_ui(lang_code)
+        if hasattr(self, "page_startup") and hasattr(self.page_startup, "retranslate_ui"):
+            self.page_startup.retranslate_ui(lang_code)
+        if hasattr(self, "page_duplicates") and hasattr(self.page_duplicates, "retranslate_ui"):
+            self.page_duplicates.retranslate_ui(lang_code)
+        if hasattr(self, "page_uninstaller") and hasattr(self.page_uninstaller, "retranslate_ui"):
+            self.page_uninstaller.retranslate_ui(lang_code)
+        if hasattr(self, "page_tweaks") and hasattr(self.page_tweaks, "retranslate_ui"):
             self.page_tweaks.retranslate_ui(lang_code)
-        if hasattr(self, "page_network"):
+        if hasattr(self, "page_network") and hasattr(self.page_network, "retranslate_ui"):
             self.page_network.retranslate_ui(lang_code)
-        if hasattr(self, "page_registry"):
+        if hasattr(self, "page_registry") and hasattr(self.page_registry, "retranslate_ui"):
             self.page_registry.retranslate_ui(lang_code)
-        if hasattr(self, "page_hardware"):
+        if hasattr(self, "page_hardware") and hasattr(self.page_hardware, "retranslate_ui"):
             self.page_hardware.retranslate_ui(lang_code)
 
     def _on_nav_button_clicked(self, page_index: int) -> None:
@@ -424,3 +483,11 @@ class MainWindow(QMainWindow):
         self.page_dashboard.refresh_stats()
         self.page_dashboard.update_health_status(is_good=True)
         self.navigate_to(0)
+
+    def closeEvent(self, event) -> None:
+        try:
+            get_localization().unregister_listener(self.retranslate_ui)
+        except Exception:
+            pass
+        super().closeEvent(event)
+

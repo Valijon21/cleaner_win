@@ -86,7 +86,7 @@ class DuplicatesPage(QWidget):
         header_row.addLayout(header_text)
         header_row.addStretch()
 
-        self.btn_browse = QPushButton("📁 Papka tanlash...")
+        self.btn_browse = QPushButton(tr("btn_browse_folder", "📁 Papka tanlash..."))
         self.btn_browse.setObjectName("SecondaryButton")
         self.btn_browse.setCursor(Qt.PointingHandCursor)
         self.btn_browse.clicked.connect(self._on_browse_folder)
@@ -96,9 +96,9 @@ class DuplicatesPage(QWidget):
 
         # Drive and Size Filter Bar
         filter_bar = QHBoxLayout()
-        lbl_drive = QLabel("Disk / Manzil:")
-        lbl_drive.setStyleSheet("color: #D1D5DB; font-weight: 600;")
-        filter_bar.addWidget(lbl_drive)
+        self.lbl_drive = QLabel("Disk / Manzil:")
+        self.lbl_drive.setStyleSheet("color: #D1D5DB; font-weight: 600;")
+        filter_bar.addWidget(self.lbl_drive)
 
         self.combo_drives = QComboBox()
         drives = enumerate_drives()
@@ -106,9 +106,9 @@ class DuplicatesPage(QWidget):
             self.combo_drives.addItem(f"{d.letter} ({d.label or 'Mahalliy disk'})", d.letter + "\\")
         filter_bar.addWidget(self.combo_drives)
 
-        lbl_min_size = QLabel("Minimal hajm:")
-        lbl_min_size.setStyleSheet("color: #D1D5DB; font-weight: 600; margin-left: 12px;")
-        filter_bar.addWidget(lbl_min_size)
+        self.lbl_min_size = QLabel("Minimal hajm:")
+        self.lbl_min_size.setStyleSheet("color: #D1D5DB; font-weight: 600; margin-left: 12px;")
+        filter_bar.addWidget(self.lbl_min_size)
 
         self.combo_min_size = QComboBox()
         self.combo_min_size.addItem("1 MB dan katta", 1024 * 1024)
@@ -119,7 +119,7 @@ class DuplicatesPage(QWidget):
 
         filter_bar.addStretch()
 
-        self.btn_start_scan = QPushButton("  🔍 Skanerlashni boshlash  ")
+        self.btn_start_scan = QPushButton("  " + tr("btn_scan_duplicates", "🔍 Dublikatlarni qidirish") + "  ")
         self.btn_start_scan.setObjectName("PrimaryButton")
         self.btn_start_scan.setCursor(Qt.PointingHandCursor)
         self.btn_start_scan.setStyleSheet("background-color: #10B981; font-weight: 700; color: white; padding: 8px 16px; border-radius: 6px;")
@@ -293,3 +293,21 @@ class DuplicatesPage(QWidget):
 
             QMessageBox.information(self, "Muvaffaqiyatli", f"{deleted_count} ta dublikat fayl o'chirildi.")
             self._on_start_scan()
+
+    def retranslate_ui(self, lang_code: str = "") -> None:
+        self.lbl_title.setText(tr("nav_duplicates", "🔍 Dublikat fayllarni qidirish"))
+        self.lbl_subtitle.setText(tr("duplicates_subtitle", "Bir xil mazmundagi nusxa fayllarni aniqlang va diskda joy tejang"))
+        self.btn_browse.setText(tr("btn_browse_folder", "📁 Papka tanlash..."))
+        if hasattr(self, "lbl_drive"):
+            self.lbl_drive.setText(tr("lbl_drive_path", "Disk / Manzil:"))
+        if hasattr(self, "lbl_min_size"):
+            self.lbl_min_size.setText(tr("lbl_min_size", "Minimal hajm:"))
+        self.btn_start_scan.setText("  " + tr("btn_scan_duplicates", "🔍 Dublikatlarni qidirish") + "  ")
+        self.btn_clean_duplicates.setText(tr("btn_clean_duplicates", "🗑️ Tanlangan dublikatlarni o'chirish"))
+        self.tree.setHeaderLabels([
+            tr("tbl_file_path", "Fayl nomi / Joylashuvi"),
+            tr("tbl_size", "Hajmi"),
+            tr("tbl_modified_date", "O'zgartirilgan sana"),
+            tr("tbl_marker", "Belgi"),
+        ])
+

@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
     QMessageBox,
+    QScrollArea,
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from cleanguard.windows.network import NetworkOptimizer
@@ -40,10 +41,19 @@ class NetworkPage(QWidget):
         super().__init__(parent)
         self.ping_worker = None
         self._init_ui()
-        self.refresh_all()
+        self.refresh_all(run_ping=False)
 
     def _init_ui(self) -> None:
-        layout = QVBoxLayout(self)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background-color: transparent;")
+
+        content = QWidget()
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(32, 28, 32, 28)
         layout.setSpacing(18)
 
@@ -77,9 +87,9 @@ class NetworkPage(QWidget):
         ping_layout = QVBoxLayout(card_ping)
         ping_layout.setSpacing(8)
 
-        lbl_ping_title = QLabel("📡 " + tr("network_ping_title", "Tarmoq kechikishi (Ping)"))
-        lbl_ping_title.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
-        ping_layout.addWidget(lbl_ping_title)
+        self.lbl_ping_title = QLabel("📡 " + tr("network_ping_title", "Tarmoq kechikishi (Ping)"))
+        self.lbl_ping_title.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
+        ping_layout.addWidget(self.lbl_ping_title)
 
         self.lbl_ping_val = QLabel("-- ms")
         self.lbl_ping_val.setStyleSheet("font-size: 32px; font-weight: 800; color: #34D399;")
@@ -101,9 +111,9 @@ class NetworkPage(QWidget):
         boost_layout = QVBoxLayout(card_boost)
         boost_layout.setSpacing(8)
 
-        lbl_boost_title = QLabel("⚡ " + tr("network_turbo_title", "Tarmoq tezlatgich (Network Accelerator)"))
-        lbl_boost_title.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
-        boost_layout.addWidget(lbl_boost_title)
+        self.lbl_boost_title = QLabel("⚡ " + tr("network_turbo_title", "Tarmoq tezlatgich (Network Accelerator)"))
+        self.lbl_boost_title.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
+        boost_layout.addWidget(self.lbl_boost_title)
 
         self.lbl_throttling_status = QLabel("Holat: Tekshirilmoqda...")
         self.lbl_throttling_status.setStyleSheet("font-size: 13px; color: #F9FAFB;")
@@ -127,9 +137,9 @@ class NetworkPage(QWidget):
         layout.addLayout(cards_row)
 
         # Bottom: Network Adapters Table
-        lbl_adapters_header = QLabel("🌐 " + tr("network_adapters_title", "Faol tarmoq adapterlari:"))
-        lbl_adapters_header.setStyleSheet("font-size: 14px; font-weight: 600; color: #F9FAFB; margin-top: 10px;")
-        layout.addWidget(lbl_adapters_header)
+        self.lbl_adapters_header = QLabel("🌐 " + tr("network_adapters_title", "Faol tarmoq adapterlari:"))
+        self.lbl_adapters_header.setStyleSheet("font-size: 14px; font-weight: 600; color: #F9FAFB; margin-top: 10px;")
+        layout.addWidget(self.lbl_adapters_header)
 
         self.table_adapters = QTableWidget()
         self.table_adapters.setColumnCount(3)
@@ -139,12 +149,23 @@ class NetworkPage(QWidget):
         self.table_adapters.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.table_adapters.verticalHeader().setVisible(False)
         self.table_adapters.setAlternatingRowColors(True)
+        self.table_adapters.setMinimumHeight(200)
         layout.addWidget(self.table_adapters)
 
-    def refresh_all(self) -> None:
+        scroll.setWidget(content)
+        outer_layout.addWidget(scroll)
+
+    def refresh_all(self, run_ping: bool = True) -> None:
         self._refresh_throttling_status()
         self._refresh_adapters()
-        self._run_ping_test()
+        if run_ping:
+            self._run_ping_test()
+
+    def closeEvent(self, event) -> None:
+        if self.ping_worker and self.ping_worker.isRunning():
+            self.ping_worker.quit()
+            self.ping_worker.wait(500)
+        super().closeEvent(event)
 
     def _refresh_throttling_status(self) -> None:
         is_opt = NetworkOptimizer.is_throttling_disabled()
@@ -223,3 +244,14 @@ class NetworkPage(QWidget):
         self.lbl_title.setText("🚀 " + tr("nav_network", "Internet va Tarmoqni tezlashtirish"))
         self.lbl_subtitle.setText(tr("network_subtitle", "Tarmoq parametrlarini optimallashtirish, DNS keshini tozalash va kechikishni (Ping) pasaytirish"))
         self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
+        self.lbl_ping_title.setText("📡 " + tr("network_ping_title", "Tarmoq kechikishi (Ping)"))
+        self.btn_ping_test.setText("⚡ " + tr("btn_check_ping", "Pingni o'lchash"))
+        self.lbl_boost_title.setText("⚡ " + tr("network_turbo_title", "Tarmoq tezlatgich (Network Accelerator)"))
+        self.btn_optimize.setText("🚀 " + tr("btn_boost_network", "Internetni tezlashtirish"))
+        self.btn_flush_dns.setText("🧹 " + tr("btn_flush_dns", "DNS keshini tozalash"))
+        self.lbl_adapters_header.setText("🌐 " + tr("network_adapters_title", "Faol tarmoq adapterlari:"))
+        self.table_adapters.setHorizontalHeaderLabels([
+            tr("tbl_adapter_name", "Adapter nomi"),
+            tr("tbl_ip_address", "IPv4 manzili"),
+            tr("tbl_status", "Holati"),
+        ])

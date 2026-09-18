@@ -38,16 +38,48 @@ QFrame#Sidebar {
     border-right: 1px solid #1F2937;
 }
 
+QScrollArea#NavScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+QScrollArea#NavScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+QScrollArea#NavScrollArea QScrollBar:vertical {
+    background: transparent;
+    width: 4px;
+    margin: 0px;
+}
+
+QScrollArea#NavScrollArea QScrollBar::handle:vertical {
+    background: #374151;
+    min-height: 25px;
+    border-radius: 2px;
+}
+
+QScrollArea#NavScrollArea QScrollBar::handle:vertical:hover {
+    background: #10B981;
+}
+
+QScrollArea#NavScrollArea QScrollBar::add-line:vertical,
+QScrollArea#NavScrollArea QScrollBar::sub-line:vertical {
+    height: 0px;
+    border: none;
+    background: transparent;
+}
+
 QPushButton#NavButton {
     background-color: transparent;
     color: #9CA3AF;
     text-align: left;
-    padding: 12px 18px;
-    font-size: 14px;
+    padding: 8px 12px;
+    font-size: 13px;
     font-weight: 500;
     border: none;
-    border-radius: 8px;
-    margin: 2px 8px;
+    border-radius: 6px;
+    margin: 1px 4px;
 }
 
 QPushButton#NavButton:hover {
@@ -56,8 +88,9 @@ QPushButton#NavButton:hover {
 }
 
 QPushButton#NavButton:checked {
-    background-color: #1E3A8A;
-    color: #60A5FA;
+    background-color: #064E3B;
+    color: #34D399;
+    border-left: 3px solid #10B981;
     font-weight: 600;
 }
 
@@ -118,7 +151,7 @@ QFrame#SurfaceCard {
 }
 
 /* Tables */
-QTableView, QTableWidget {
+QTableView, QTableWidget, QTreeWidget, QTreeView, QListWidget {
     background-color: #0F172A;
     alternate-background-color: #131E32;
     color: #E2E8F0;
@@ -130,16 +163,16 @@ QTableView, QTableWidget {
     outline: none;
 }
 
-QTableView::item, QTableWidget::item {
+QTableView::item, QTableWidget::item, QTreeWidget::item, QTreeView::item, QListWidget::item {
     padding: 6px 10px;
     border-bottom: 1px solid #172235;
 }
 
-QTableView::item:hover, QTableWidget::item:hover {
+QTableView::item:hover, QTableWidget::item:hover, QTreeWidget::item:hover, QTreeView::item:hover, QListWidget::item:hover {
     background-color: #1E293B;
 }
 
-QTableView::item:selected, QTableWidget::item:selected {
+QTableView::item:selected, QTableWidget::item:selected, QTreeWidget::item:selected, QTreeView::item:selected, QListWidget::item:selected {
     background-color: #1E3A8A;
     color: #FFFFFF;
 }

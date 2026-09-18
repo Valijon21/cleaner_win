@@ -126,6 +126,7 @@ class StartupPage(QWidget):
         c_layout.addWidget(lbl_t)
         c_layout.addWidget(lbl_v)
         card.lbl_val = lbl_v
+        card.lbl_title = lbl_t
         return card
 
     def refresh_items(self) -> None:
@@ -222,3 +223,24 @@ class StartupPage(QWidget):
         if not success:
             QMessageBox.warning(self, "Xatolik", f"Holatni o'zgartirib bo'lmadi: {msg}")
         self.refresh_items()
+
+    def retranslate_ui(self, lang_code: str = "") -> None:
+        self.lbl_title.setText(tr("nav_startup", "🚀 Avto-yuklanish boshqaruvi"))
+        self.lbl_subtitle.setText(tr("startup_subtitle", "Windows yuklanishini sekinlashtiruvchi keraksiz dasturlarni o'chiring"))
+        self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
+        self.txt_search.setPlaceholderText("🔍 " + tr("search_placeholder", "Qidirish..."))
+        if hasattr(self.card_total, "lbl_title"):
+            self.card_total.lbl_title.setText(tr("startup_total", "Jami dasturlar"))
+        if hasattr(self.card_enabled, "lbl_title"):
+            self.card_enabled.lbl_title.setText(tr("startup_enabled", "Faol yuklanuvchilar"))
+        if hasattr(self.card_high_impact, "lbl_title"):
+            self.card_high_impact.lbl_title.setText(tr("startup_high_impact", "Yuqori ta'sirli"))
+        self.table.setHorizontalHeaderLabels([
+            tr("tbl_app", "Dastur"),
+            tr("tbl_publisher", "Noshir"),
+            tr("tbl_impact", "Ta'siri"),
+            tr("tbl_location", "Joylashuvi"),
+            tr("tbl_status", "Holati"),
+            tr("tbl_action", "Amal"),
+        ])
+

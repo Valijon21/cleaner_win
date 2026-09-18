@@ -18,6 +18,10 @@ def qapp():
     if app is None:
         app = QApplication(sys.argv)
     yield app
+    for w in app.topLevelWidgets():
+        w.close()
+        w.deleteLater()
+    app.processEvents()
 
 
 def test_stat_card_and_risk_badge(qapp):
@@ -74,6 +78,15 @@ def test_main_window_instantiation(qapp, tmp_path):
 
     get_localization().set_language("uz")
     assert any("Boshqaruv" in btn.text() for btn, _ in win.nav_buttons)
+
+    # Cleanly stop timers and close
+    if hasattr(win.page_hardware, "timer"):
+        win.page_hardware.timer.stop()
+    if hasattr(win.page_turbo, "timer"):
+        win.page_turbo.timer.stop()
+    win.close()
+    win.deleteLater()
+    qapp.processEvents()
 
 
 def test_results_page_table_loading(qapp):
@@ -198,5 +211,46 @@ def test_asc_care_center_and_pipeline(qapp, tmp_path):
     results_page.load_results(ScanSummary(bytes_reclaimable=4 * 1024 * 1024 * 1024), [])
     assert "🔴" in results_page.lbl_health_icon.text()
     assert "⚡" in results_page.btn_clean.text()
+
+
+def test_sidebar_scroll_and_14_modules(qapp, tmp_path):
+    """Verify that all 14 navigation buttons and categories reside in a responsive QScrollArea."""
+    from PyQt5.QtWidgets import QScrollArea
+    from cleanguard.localization import get_localization
+
+    db = DatabaseManager(db_path=str(tmp_path / "nav_test.db"))
+    win = MainWindow(db_manager=db, enable_monitor=False)
+
+    # 1. NavScrollArea exists
+    scroll = win.findChild(QScrollArea, "NavScrollArea")
+    assert scroll is not None
+    assert scroll.widgetResizable() is True
+
+    # 2. Exactly 14 navigation buttons across 4 enterprise groups
+    assert len(win.nav_buttons) == 14
+    assert len(win.nav_section_labels) == 4
+    assert win.stack.count() == 15
+
+    # 3. Test navigation through all 14 views
+    for btn, page_idx in win.nav_buttons:
+        win.navigate_to(page_idx)
+        assert win.stack.currentIndex() == page_idx
+        assert btn.isChecked() is True
+
+    # 4. Test multilingual retranslation of categories and buttons
+    loc = get_localization()
+    for lang in ["en", "ru", "uz"]:
+        loc.set_language(lang)
+        assert len(win.nav_buttons) == 14
+
+    # Cleanly teardown
+    if hasattr(win.page_hardware, "timer"):
+        win.page_hardware.timer.stop()
+    if hasattr(win.page_turbo, "timer"):
+        win.page_turbo.timer.stop()
+    win.close()
+    win.deleteLater()
+    qapp.processEvents()
+
 
 

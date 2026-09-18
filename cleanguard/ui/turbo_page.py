@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
     QFrame,
     QRadioButton,
     QButtonGroup,
+    QScrollArea,
 )
 from PyQt5.QtCore import Qt, QTimer
 from cleanguard.windows.memory import MemoryOptimizer
@@ -36,7 +37,16 @@ class TurboPage(QWidget):
         self.update_stats()
 
     def _init_ui(self) -> None:
-        layout = QVBoxLayout(self)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("background-color: transparent;")
+
+        content = QWidget()
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(32, 28, 32, 28)
         layout.setSpacing(18)
 
@@ -69,11 +79,11 @@ class TurboPage(QWidget):
         ram_layout.setSpacing(14)
 
         card_top = QHBoxLayout()
-        lbl_ram_title = QLabel("💻 OPERATIV XOTIRA (RAM) HOLATI")
-        lbl_ram_title.setStyleSheet("font-size: 13px; font-weight: 700; color: #9CA3AF; letter-spacing: 0.5px;")
+        self.lbl_ram_title = QLabel("💻 OPERATIV XOTIRA (RAM) HOLATI")
+        self.lbl_ram_title.setStyleSheet("font-size: 13px; font-weight: 700; color: #9CA3AF; letter-spacing: 0.5px;")
         self.lbl_ram_pct = QLabel("0%")
         self.lbl_ram_pct.setStyleSheet("font-size: 28px; font-weight: 800; color: #10B981;")
-        card_top.addWidget(lbl_ram_title)
+        card_top.addWidget(self.lbl_ram_title)
         card_top.addStretch()
         card_top.addWidget(self.lbl_ram_pct)
         ram_layout.addLayout(card_top)
@@ -127,9 +137,9 @@ class TurboPage(QWidget):
             }
         """)
         mode_layout = QVBoxLayout(mode_card)
-        lbl_mode_title = QLabel("⚙️ OPTIMALLASHTIRISH REJIMI")
-        lbl_mode_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #9CA3AF;")
-        mode_layout.addWidget(lbl_mode_title)
+        self.lbl_mode_title = QLabel("⚙️ OPTIMALLASHTIRISH REJIMI")
+        self.lbl_mode_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #9CA3AF;")
+        mode_layout.addWidget(self.lbl_mode_title)
 
         modes_row = QHBoxLayout()
         self.radio_work = QRadioButton("💼 Ish rejimi (Work Mode) — Ofis va dasturlash uchun barqaror tezlashtirish")
@@ -184,6 +194,9 @@ class TurboPage(QWidget):
         layout.addLayout(action_layout)
         layout.addStretch()
 
+        scroll.setWidget(content)
+        outer_layout.addWidget(scroll)
+
     def update_stats(self) -> None:
         """Fetch real-time memory information."""
         info = MemoryOptimizer.get_memory_info()
@@ -223,3 +236,13 @@ class TurboPage(QWidget):
             self.lbl_feedback.setText(
                 f"✅ {mode_name}: Barcha jarayonlar ishchi to'plami optimallashtirildi."
             )
+
+    def retranslate_ui(self, lang_code: str = "") -> None:
+        self.lbl_title.setText(tr("nav_turbo", "⚡ Turbo Boost (Tizimni tezlashtirish)"))
+        self.lbl_subtitle.setText(tr("turbo_subtitle", "Operativ xotira (RAM)ni bo'shating va og'ir vazifalar uchun tizimni tezlashtiring"))
+        self.lbl_ram_title.setText("💻 " + tr("turbo_ram_title", "OPERATIV XOTIRA (RAM) HOLATI"))
+        self.lbl_mode_title.setText("⚙️ " + tr("turbo_mode_title", "OPTIMALLASHTIRISH REJIMI"))
+        self.radio_work.setText(tr("turbo_mode_work", "💼 Ish rejimi (Work Mode) — Ofis va dasturlash uchun barqaror tezlashtirish"))
+        self.radio_game.setText(tr("turbo_mode_game", "🎮 O'yin rejimi (Game Mode) — Maksimal erkin RAM va fonni to'xtatish"))
+        self.btn_flush.setText(tr("btn_turbo_flush", "⚡ TEZLASHTIRISH VA RAMNI BO'SHATISH"))
+

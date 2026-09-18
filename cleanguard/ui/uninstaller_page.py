@@ -263,3 +263,18 @@ class UninstallerPage(QWidget):
 
         dialog = LeftoversDialog(app, leftovers, parent=self)
         dialog.exec_()
+
+    def retranslate_ui(self, lang_code: str = "") -> None:
+        self.lbl_title.setText(tr("nav_uninstaller", "📦 Dasturlar va qoldiqlarni o'chirish"))
+        self.lbl_subtitle.setText(tr("uninstaller_subtitle", "O'rnatilgan dasturlarni to'liq o'chiring va qoldiqlarini tozalang"))
+        self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
+        self.txt_search.setPlaceholderText("🔍 " + tr("search_placeholder", "Dastur yoki noshir nomini qidiring..."))
+        self.lbl_count.setText(f"Jami: {len(self.apps)} ta dastur")
+        self.table.setHorizontalHeaderLabels([
+            tr("tbl_app_name", "Dastur nomi"),
+            tr("tbl_publisher", "Noshir"),
+            tr("tbl_version", "Versiya"),
+            tr("tbl_size", "Hajmi"),
+            tr("tbl_actions", "Amallar"),
+        ])
+

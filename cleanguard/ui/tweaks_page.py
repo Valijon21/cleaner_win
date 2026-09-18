@@ -296,3 +296,11 @@ class TweaksPage(QWidget):
         self.lbl_title.setText("🛠️ " + tr("nav_tweaks", "Windows optimizatsiya va Maxfiylik"))
         self.lbl_subtitle.setText(tr("tweaks_subtitle", "Windows 10/11 standart ilovalarini (Bloatware) va telemetriya xizmatlarini boshqaring"))
         self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
+        self.tabs.setTabText(0, "🛡️ " + tr("tab_privacy", "Maxfiylik va Telemetriya (Privacy)"))
+        self.tabs.setTabText(1, "📦 " + tr("tab_bloatware", "Standart UWP Ilovalar (Bloatware)"))
+        self.table_bloatware.setHorizontalHeaderLabels([
+            tr("tbl_app_name", "Ilova nomi"),
+            tr("tbl_category", "Kategoriya"),
+            tr("tbl_status", "Holati"),
+            tr("tbl_action", "Amal"),
+        ])

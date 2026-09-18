@@ -43,6 +43,11 @@ class LocalizationManager:
         if callback not in self._listeners:
             self._listeners.append(callback)
 
+    def unregister_listener(self, callback) -> None:
+        """Unregister a language change callback."""
+        if callback in self._listeners:
+            self._listeners.remove(callback)
+
     def set_language(self, lang_code: str) -> None:
         """Switch active UI language and notify listeners."""
         if lang_code in SUPPORTED_LANGUAGES:

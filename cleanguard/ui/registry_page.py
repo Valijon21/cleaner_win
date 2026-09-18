@@ -243,3 +243,9 @@ class RegistryPage(QWidget):
         self.btn_scan.setText("🔍 " + tr("btn_scan_registry", "Reestrni skanerlash"))
         self.btn_clean.setText("🧹 " + tr("btn_clean_registry", "Tanlanganlarni tozalash"))
         self.btn_rollback.setText("⏪ " + tr("btn_registry_rollback", "Zaxiradan qaytarish (Rollback)"))
+        self.table.setHorizontalHeaderLabels([
+            tr("tbl_issue_desc", "Muammo tavsifi"),
+            tr("tbl_category", "Toifa"),
+            tr("tbl_key_location", "Kalit joylashuvi"),
+            tr("tbl_reg_value", "Reestr qiymati"),
+        ])

@@ -425,6 +425,9 @@ class SettingsPage(QWidget):
         self.lbl_auto_desc.setText(tr("autocare_desc", "Windows Task Scheduler orqali kompyuterni muntazam fonda xavfsiz tozalash."))
         self.chk_autocare.setText(tr("autocare_enable", "Avtomatik fonda tozalashni yoqish"))
         self.btn_test_autocare.setText("⚡ " + tr("btn_test_clean", "Hozir sinab ko'rish"))
+        if hasattr(self, "combo_schedule") and self.combo_schedule.count() >= 2:
+            self.combo_schedule.setItemText(0, tr("autocare_weekly", "Har hafta (Yakshanba 12:00)"))
+            self.combo_schedule.setItemText(1, tr("autocare_daily", "Har kuni (12:00)"))
 
     def _refresh_autocare_status(self) -> None:
         try:

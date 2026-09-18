@@ -20,7 +20,7 @@
 
 **CleanGuard** is an open-source, enterprise-grade Windows optimization desktop utility engineered with strict safety guarantees. Unlike traditional PC cleaners that blindly purge files and risk OS stability, CleanGuard operates on a **Safety-by-Architecture** principle: every single deletion candidate is cryptographically checked, boundary-isolated, and verified against system policies before any modification takes place.
 
-Featuring **14 specialized modules**, CleanGuard delivers comprehensive disk reclamation, duplicate file hashing, safe registry cleaning with automatic rollback, startup optimization, bloatware & telemetry removal, network latency tuning, real-time hardware diagnostics, and silent scheduled maintenance.
+Featuring **15 specialized modules**, CleanGuard delivers comprehensive disk reclamation, duplicate file hashing, safe registry cleaning with automatic rollback, large file discovery, startup optimization, bloatware & telemetry removal, Windows Update & WinSxS cleanup, network latency tuning, real-time hardware diagnostics, and silent scheduled maintenance.
 
 ---
 
@@ -44,29 +44,31 @@ CleanGuard enforces non-bypassable guarantees to ensure your operating system re
 
 ---
 
-## 🚀 The 14 Core Modules
+## 🚀 The 15 Enterprise Modules
 
 ```text
 CleanGuard Suite
-├── 📊 01. Dashboard              ── Live system health, storage gauges & quick actions
+├── 📊 01. Dashboard              ── Live system health, 1-Click Smart Care & storage gauges
 ├── 🧹 02. Deep Cleaner           ── Multi-threaded concurrent junk & cache scanner
 ├── 🔍 03. Duplicate Finder       ── Multi-phase hash detector (MD5/SHA256) with preview
-├── 🛡️ 04. Registry Cleaner       ── Safe invalid key scanner with 1-click .reg rollback
-├── 📦 05. App Uninstaller        ── Win32/UWP uninstaller with deep leftover residue purge
-├── 🚀 06. Startup Manager        ── Run/RunOnce, Startup folders & Task Scheduler manager
-├── ⚡ 07. Turbo RAM Booster      ── Working set trimming & Standby memory cache flush
-├── 🌐 08. Network Optimizer      ── DNS flush, Winsock reset, TCP tuning & DNS benchmark
-├── 🛠️ 09. Tweaks & Privacy       ── Bloatware removal, telemetry blocker & gaming tweaks
-├── 💻 10. Hardware Monitor       ── Real-time CPU, GPU, RAM, Disks, Motherboard & OS specs
-├── ⏰ 11. Auto-Care Scheduler    ── Windows Task Scheduler integration for automated care
-├── 🔄 12. Restore Point Manager  ── Windows VSS System Restore Point generation
-├── 📜 13. Audit & History        ── SQLite WAL database with CSV/JSON export engine
-└── 🎨 14. Modern Fluent UI       ── High-DPI dark interface with dynamic trilingual support
+├── 🐘 04. Large Files Finder     ── 100MB+ & 1GB+ space-hog analyzer with SafetyEngine protection
+├── 🛡️ 05. Registry Cleaner       ── Safe invalid key scanner with 1-click .reg rollback
+├── 📦 06. App Uninstaller        ── Win32/UWP uninstaller with deep leftover residue purge
+├── 🚀 07. Startup Manager        ── Run/RunOnce, Startup folders & Task Scheduler manager
+├── ⚡ 08. Turbo RAM Booster      ── Working set trimming & Standby memory cache flush
+├── 🌐 09. Network Optimizer      ── DNS flush, Winsock reset, TCP tuning & DNS benchmark
+├── 🛠️ 10. Tweaks & WinSxS        ── Bloatware remover, telemetry blocker & Windows Update (DISM)
+├── 💻 11. Hardware Monitor       ── Real-time CPU, GPU, RAM, Disks, Motherboard & OS specs
+├── ⏰ 12. Auto-Care Scheduler    ── Windows Task Scheduler integration for automated care
+├── 🔄 13. Restore Point Manager  ── Windows VSS System Restore Point generation
+├── 📜 14. Audit & History        ── SQLite WAL database with CSV/JSON export engine
+└── 🎨 15. Modern Fluent UI       ── High-DPI dark interface with dynamic trilingual support
 ```
 
-### 1. 📊 System Dashboard
+### 1. 📊 System Dashboard & 1-Click Smart Care
 - Real-time disk capacity meters for all detected drives (C:, D:, etc.) with color-coded warning thresholds.
-- Overall system health score, memory load indicator, and instant one-click quick clean triggers.
+- Overall system health score, memory load indicator, and instant circular SCAN centerpiece.
+- **⚡ 1-Click Smart Care**: ASC-style all-in-one automated pipeline running Junk Clean + Safe Registry Repair + RAM Flush + DNS Purge + Windows Update Cache purge with live progress metrics and completion modal.
 
 ### 2. 🧹 Deep Clean Engine
 - Concurrent multithreaded scanning across high-volume storage categories:
@@ -84,7 +86,19 @@ CleanGuard Suite
 - Side-by-side file visualizer with smart auto-selection (keep oldest, keep newest, or custom).
 - PathGuard integration prevents duplicates from deleting system or application files.
 
-### 4. 🛡️ Safe Registry Cleaner
+### 4. 🐘 Large & Space-Hog Files Finder
+- Identifies storage-hogging files across drives (>100 MB, >500 MB, >1 GB, >5 GB).
+- Automatically groups files into categories:
+  - 🎬 **Videos** (`.mp4`, `.mkv`, `.avi`, `.mov`, `.wmv`)
+  - 🎵 **Audio** (`.mp3`, `.wav`, `.flac`, `.aac`)
+  - 📦 **Archives & ISOs** (`.zip`, `.rar`, `.7z`, `.iso`, `.img`)
+  - 💿 **Virtual Machines & Disk Images** (`.vmdk`, `.vhd`, `.vhdx`)
+  - 📄 **Documents & Databases** (`.pdf`, `.docx`, `.bak`, `.sql`)
+  - ⚙️ **Installers & Packages** (`.exe`, `.msi`, `.cab`)
+- **SafetyEngine Guard**: Critical OS and kernel files (`pagefile.sys`, `swapfile.sys`, `hiberfil.sys`, `C:\Windows\*`) are blocked from accidental deletion.
+- Features one-click **"Reveal in Explorer"** (`explorer.exe /select`) and safety-confirmed deletion.
+
+### 5. 🛡️ Safe Registry Cleaner
 - Scans orphaned and corrupt registry entries:
   - Invalid CLSIDs and COM/ActiveX components
   - Broken file associations and missing extensions
@@ -93,33 +107,35 @@ CleanGuard Suite
   - Obsolete Windows MUI caches
 - **Zero-Risk Guarantee**: Generates an automated `.reg` backup before any changes are applied, enabling immediate 1-click rollback.
 
-### 5. 📦 Application Uninstaller & Leftover Cleaner
+### 6. 📦 Application Uninstaller & Leftover Cleaner
 - Unified view of standard desktop software (Win32) and modern Windows apps (UWP).
 - Supports standard and silent/unattended uninstall routines.
 - **Deep Leftover Hunter**: Automatically crawls `%AppData%`, `%LocalAppData%`, `Program Files`, and the Windows Registry to purge residual files left behind by uninstalled software.
 
-### 6. 🚀 Startup Manager
+### 7. 🚀 Startup Manager
 - Inspects HKCU/HKLM `Run`, `RunOnce`, Startup directories, and Task Scheduler triggers.
 - Analyze boot impact (High, Medium, Low) for each item.
 - Toggle entries on/off or configure delayed launch to dramatically accelerate boot time.
 
-### 7. ⚡ Turbo Memory Booster
+### 8. ⚡ Turbo Memory Booster
 - Direct Win32 API integration via `ctypes` calling `EmptyWorkingSet`.
 - Flushes orphaned system standby lists and working set caches without terminating user applications or risking data corruption.
 
-### 8. 🌐 Network & Latency Optimizer
+### 9. 🌐 Network & Latency Optimizer
 - One-click **DNS Cache Flush** (`ipconfig /flushdns`) to resolve stale routing.
 - **Winsock Catalog Reset** (`netsh winsock reset`) for connection repair.
 - **TCP/IP Stack Auto-Tuning** optimization for reduced gaming latency and buffer bloat.
 - **Live DNS Benchmark**: Pings top secure DNS providers (Cloudflare `1.1.1.1`, Google `8.8.8.8`, OpenDNS `208.67.222.222`) and displays real-time latency (ms).
 
-### 9. 🛠️ Windows Tweaks & Privacy Guard
+### 10. 🛠️ Windows Tweaks & WinSxS Component Store
+- **Windows Update Cache Purge**: Safely removes gigabytes of obsolete update installers from `SoftwareDistribution\Download` and `DeliveryOptimization\Cache`.
+- **WinSxS Component Store (DISM)**: Executes official Microsoft `dism.exe /Online /Cleanup-Image /StartComponentCleanup` to compress and purge superseded Windows OS service packs and manifests (reclaims 10–25+ GB).
 - **Bloatware Purge**: Safely removes pre-installed Windows UWP apps (Cortana, Bing News, Xbox telemetry, Solitaire, etc.).
 - **Telemetry & Tracking Blocker**: Disables Microsoft DiagTrack, Connected User Experiences, and Activity History logging.
 - **Start Menu & Search Tuning**: Disables online Bing search and web ads in the Windows Start menu.
 - **Gaming Tweaks**: Optimizes GPU scheduling, disables mouse acceleration, and configures low-latency power profiles.
 
-### 10. 💻 Hardware & System Specs Monitor
+### 11. 💻 Hardware & System Specs Monitor
 - Live hardware telemetries:
   - **Processor (CPU)**: Architecture, physical/logical core counts, utilization percentage.
   - **Memory (RAM)**: Total, available, in-use, and utilization graph.
@@ -128,21 +144,21 @@ CleanGuard Suite
   - **Motherboard & BIOS**: Manufacturer, product board, BIOS release version.
   - **Operating System**: Windows edition, build number (e.g. 22631), UBR, and bitness.
 
-### 11. ⏰ Auto-Care Task Scheduler
+### 12. ⏰ Auto-Care Task Scheduler
 - Seamlessly registers native Windows scheduled tasks via `schtasks.exe`.
 - Configurable intervals (Daily, Weekly, Idle time).
 - Supports headless silent background execution (`--auto-clean`) without opening the GUI.
 
-### 12. 🔄 System Restore Point Engine
+### 13. 🔄 System Restore Point Engine
 - Direct interaction with Windows Volume Shadow Copy (VSS) via `SRSetRestorePointW` and WMI `SystemRestore`.
 - Automatically checkpoints system state before any risky cleanups or registry operations.
 
-### 13. 📜 Audit History & Reports
+### 14. 📜 Audit History & Reports
 - Every cleaning event is immutably logged into a local SQLite database configured with **WAL (Write-Ahead Logging)** mode.
 - Tracks lifetime recovered space, file counts, and error audits.
 - Full export capabilities to **CSV** and **JSON** formats.
 
-### 14. 🎨 Fluent High-DPI UI & Trilingual Localization
+### 15. 🎨 Fluent High-DPI UI & Trilingual Localization
 - Clean, dark-mode slate theme inspired by Windows Fluent Design.
 - Fully responsive layout with crisp SVG icons and real-time visual progress bars.
 - Dynamic runtime language switching without restarting the app:
@@ -271,16 +287,19 @@ python -m cleanguard.app.main --auto-clean
 
 ## 🧪 Automated Testing
 
-CleanGuard maintains over 25 unit and integration test suites covering path safety, duplicate file hashing, registry rollback, hardware metrics, and UI responsiveness.
+CleanGuard maintains 28 comprehensive unit and integration test suites (**132 passing tests**) covering path safety, duplicate file hashing, 1-Click Smart Care, Windows Update DISM cleanup, large file scanner, registry rollback, hardware metrics, and UI responsiveness.
 
 ```powershell
 # Install development dependencies
 pip install -r requirements-dev.txt
 
-# Execute all test suites
+# Execute all 132 test suites
 pytest -v tests/
 
 # Execute specific component tests
+pytest -v tests/test_smart_care.py
+pytest -v tests/test_updates.py
+pytest -v tests/test_large_files.py
 pytest -v tests/test_safety_engine.py
 pytest -v tests/test_registry_cleaner.py
 pytest -v tests/test_network.py

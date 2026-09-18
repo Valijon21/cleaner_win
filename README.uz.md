@@ -20,7 +20,7 @@
 
 **CleanGuard** — bu Windows operatsion tizimi uchun mo'ljallangan, korporativ darajadagi xavfsizlik kafolatlariga ega bo'lgan ochiq kodli tizim tozalash va optimallashtirish dasturi. Tizim fayllarini tavakkaliga o'chirib, Windows barqarorligiga xavf soluvchi an'anaviy tozalagichlardan farqli ravishda, CleanGuard **"Arxitektura darajasidagi xavfsizlik" (Safety-by-Architecture)** tamoyili asosida ishlaydi: har bir o'chirilishi kerak bo'lgan fayl va reestr yozuvi qat'iy tekshiruvdan, cheklovlar filtrlashidan o'tadi va faqat tizim xavfsizligiga ziyon yetkazmasligi tasdiqlangandagina o'chiriladi.
 
-Dastur tarkibida **14 ta ixtisoslashtirilgan mustaqil modul** mavjud bo'lib, ular xotirani bo'shatish, dublikat fayllarni qidirish, avtomatik zaxira nusxasi bilan reestrni xavfsiz tozalash, avto-yuklanishni sozlash, keraksiz ilovalar va telemetriyani o'chirish, internet tezligini oshirish hamda kompyuter qurilmalari holatini real vaqtda monitoring qilishni ta'minlaydi.
+Dastur tarkibida **15 ta ixtisoslashtirilgan mustaqil modul** mavjud bo'lib, ular xotirani bo'shatish, dublikat fayllarni qidirish, gigant va katta fayllar tahlili, avtomatik zaxira nusxasi bilan reestrni xavfsiz tozalash, 1-bosishli Smart Care majmuasi, avto-yuklanishni sozlash, keraksiz ilovalar va telemetriyani o'chirish, Windows Update va WinSxS keshini tozalash (DISM), internet tezligini oshirish hamda kompyuter qurilmalari holatini real vaqtda monitoring qilishni ta'minlaydi.
 
 ---
 
@@ -44,29 +44,31 @@ CleanGuard operatsion tizimning 100% barqaror va xavfsiz qolishini kafolatlash u
 
 ---
 
-## 🚀 14 Ta Asosiy Modul Tavsifi
+## 🚀 15 Ta Asosiy Modul Tavsifi
 
 ```text
 CleanGuard Majmuasi
-├── 📊 01. Dashboard              ── Tizim holati, disk sig'imlari va tezkor amallar
+├── 📊 01. Dashboard              ── Tizim holati, 1-Bosishli Smart Care va disk sig'imlari
 ├── 🧹 02. Chuqur Tozalash        ── Ko'p oqimli kesh va chiqindi fayllar skaneri
 ├── 🔍 03. Dublikatlar Qidiruvchi ── MD5/SHA256 xeshli ikki bosqichli dublikat skaneri
-├── 🛡️ 04. Reestr Tozalash        ── Zaxira nusxa va 1 tugmali rollback bilan xavfsiz reestr
-├── 📦 05. Dasturlarni O'chirish  ── Win32 va UWP dasturlarni to'liq qoldiqlari bilan o'chirish
-├── 🚀 06. Avto-Yuklanish         ── Run, Startup va Task Scheduler dasturlarini boshqarish
-├── ⚡ 07. Turbo RAM Booster      ── Working Set va Standby keshni tozalab RAMni bo'shatish
-├── 🌐 08. Tarmoq Tezlatgich      ── DNS flush, Winsock reset, TCP tuning va DNS benchmark
-├── 🛠️ 09. Tizim Sozlamalari      ── Bloatware o'chirish, telemetriya bloklash va o'yin rejimi
-├── 💻 10. Qurilmalar Monitori    ── Real vaqtda CPU, GPU, RAM, Disklarning to'liq ma'lumotlari
-├── ⏰ 11. Avtomatik Xizmat       ── Windows vazifalar rejalashtiruvchisi (Task Scheduler)
-├── 🔄 12. Tiklash Nuqtasi        ── Windows VSS tizim tiklash nuqtasini hosil qilish
-├── 📜 13. Tarix va Audit         ── SQLite WAL bazasi va CSV/JSON hisobot eksporti
-└── 🎨 14. Fluent Zamonaviy UI    ── High-DPI qorong'u interfeys va dinamik 3 tilli tizim
+├── 🐘 04. Katta Fayllar Tahlili   ── 100MB+ va 1GB+ joy oluvchi fayllar va SafetyEngine
+├── 🛡️ 05. Reestr Tozalash        ── Zaxira nusxa va 1 tugmali rollback bilan xavfsiz reestr
+├── 📦 06. Dasturlarni O'chirish  ── Win32 va UWP dasturlarni to'liq qoldiqlari bilan o'chirish
+├── 🚀 07. Avto-Yuklanish         ── Run, Startup va Task Scheduler dasturlarini boshqarish
+├── ⚡ 08. Turbo RAM Booster      ── Working Set va Standby keshni tozalab RAMni bo'shatish
+├── 🌐 09. Tarmoq Tezlatgich      ── DNS flush, Winsock reset, TCP tuning va DNS benchmark
+├── 🛠️ 10. Tizim va WinSxS        ── Bloatware o'chirish, telemetriya bloklash va Windows Update (DISM)
+├── 💻 11. Qurilmalar Monitori    ── Real vaqtda CPU, GPU, RAM, Disklarning to'liq ma'lumotlari
+├── ⏰ 12. Avtomatik Xizmat       ── Windows vazifalar rejalashtiruvchisi (Task Scheduler)
+├── 🔄 13. Tiklash Nuqtasi        ── Windows VSS tizim tiklash nuqtasini hosil qilish
+├── 📜 14. Tarix va Audit         ── SQLite WAL bazasi va CSV/JSON hisobot eksporti
+└── 🎨 15. Fluent Zamonaviy UI    ── High-DPI qorong'u interfeys va dinamik 3 tilli tizim
 ```
 
-### 1. 📊 Asosiy Boshqaruv Paneli (Dashboard)
+### 1. 📊 Asosiy Boshqaruv Paneli va 1-Bosishli Smart Care
 - Kompyuterdagi barcha mahalliy disklarning (C:, D:, va h.k.) bandlik darajasini grafik shaklda ko'rsatadi.
-- Tizimning umumiy xavfsizlik va tozalik reytingi, operativ xotira yuklamasi va tezkor tozalash tugmalari.
+- Tizimning umumiy xavfsizlik va tozalik reytingi, operativ xotira yuklamasi va markaziy skanerlash tugmasi.
+- **⚡ 1-Bosishli Smart Care**: Yagona tugma bilan avtomatlashtirilgan to'liq texnik xizmat: Chiqindi fayllarni tozalash + Xavfsiz reestrni ta'mirlash + RAM keshini bo'shatish + DNS keshini tozalash + Windows Update keshini tozalash. Real vaqt jarayon indikatori va yakuniy hisobot modali bilan.
 
 ### 2. 🧹 Chuqur Tozalash Dvigateli (Deep Cleaner)
 - Ko'p oqimli parallel skanerlash:
@@ -84,7 +86,19 @@ CleanGuard Majmuasi
 - Dublikatlarni guruhlab ko'rsatish va aqlli tanlash (eng eskisini qoldirish, eng yangisini qoldirish).
 - PathGuard orqali tizim va dastur fayllari xatolik bilan o'chirilishining oldi olinadi.
 
-### 4. 🛡️ Tizim Reestrini Xavfsiz Tozalovchi (Registry Cleaner)
+### 4. 🐘 Katta Fayllar Tahlili (Large Files Finder)
+- Disklardagi eng ko'p joy egallagan gigant fayllarni aniqlaydi (>100 MB, >500 MB, >1 GB, >5 GB).
+- Fayllarni toifalar bo'yicha ajratadi:
+  - 🎬 **Videolar** (`.mp4`, `.mkv`, `.avi`, `.mov`, `.wmv`)
+  - 🎵 **Audiolar** (`.mp3`, `.wav`, `.flac`, `.aac`)
+  - 📦 **Arxivlar va ISO** (`.zip`, `.rar`, `.7z`, `.iso`, `.img`)
+  - 💿 **Virtual Mashina Disklari** (`.vmdk`, `.vhd`, `.vhdx`)
+  - 📄 **Hujjatlar va Zaxira Bazalar** (`.pdf`, `.docx`, `.bak`, `.sql`)
+  - ⚙️ **O'rnatuvchi Dasturlar** (`.exe`, `.msi`, `.cab`)
+- **SafetyEngine Himoyasi**: Tizim yadro fayllari (`pagefile.sys`, `swapfile.sys`, `hiberfil.sys`, `C:\Windows\*`) xatolik bilan o'chirilishining oldi qat'iy olingan.
+- **"Explorerda Ko'rsatish"** (`explorer.exe /select`) va xavfsiz o'chirish imkoniyati.
+
+### 5. 🛡️ Tizim Reestrini Xavfsiz Tozalovchi (Registry Cleaner)
 - Noto'g'ri va eskirib qolgan reestr yozuvlarini tahlil qiladi:
   - Noto'g'ri CLSID va COM/ActiveX kalitlari.
   - Yo'qolgan ilovalarning buzilgan fayl assotsiatsiyalari.
@@ -92,33 +106,35 @@ CleanGuard Majmuasi
   - O'chirilgan dasturlarning reestrdagi qoldiqlari.
 - **Nol Xavf Kafolati**: Tozalashdan oldin avtomatik ravishda `.reg` fayliga zaxira nusxa olinadi va bir bosishda qaytarish mumkin.
 
-### 5. 📦 Dasturlarni O'chirish va Qoldiqlarni Yo'qotish (Uninstaller)
+### 6. 📦 Dasturlarni O'chirish va Qoldiqlarni Yo'qotish (Uninstaller)
 - Klassik Windows (Win32) dasturlari va zamonaviy UWP ilovalarini yagona ro'yxatda taqdim etadi.
 - Standart va fon rejimida (silent) dasturlarni olib tashlashni qo'llab-quvvatlaydi.
 - **Chuqur Qoldiqlarni Qidiruvchi**: Dastur o'chirilgandan so'ng `%AppData%`, `%LocalAppData%`, `Program Files` va Reestrdagi qoldiq axlatlarni avtomatik aniqlaydi va tozalaydi.
 
-### 6. 🚀 Avto-Yuklanish Menejeri (Startup Manager)
+### 7. 🚀 Avto-Yuklanish Menejeri (Startup Manager)
 - Windows ishga tushganda avtomatik yuklanadigan HKCU/HKLM `Run`, `RunOnce`, Startup papkalari va Task Scheduler vazifalarini to'liq ko'rsatadi.
 - Har bir dasturning kompyuter yuklanishiga ta'sirini (Yuqori, O'rta, Past) tahlil qiladi.
 - Dasturlarni o'chirish, yoqish yoki kechiktirib ishga tushirish imkoniyati.
 
-### 7. ⚡ Turbo Tezlashtirish va RAM Optimizatsiyasi
+### 8. ⚡ Turbo Tezlashtirish va RAM Optimizatsiyasi
 - Win32 `EmptyWorkingSet` tizim API funksiyasi orqali ishlaydi.
 - Ochiq turgan dasturlarni yopmasdan va ma'lumotlarni yo'qotmasdan operativ xotiradagi (RAM) bo'sh turgan zaxira keshini tozalaydi.
 
-### 8. 🌐 Tarmoq va Internet Tezlatgich (Network Booster)
+### 9. 🌐 Tarmoq va Internet Tezlatgich (Network Booster)
 - **DNS Keshini Tozalash** (`ipconfig /flushdns`): Eski va noto'g'ri yo'naltirilgan IP keshlarini yangilaydi.
 - **Winsock Katalogini Qayta Tiklash** (`netsh winsock reset`): Tarmoq protokollari xatolarini tuzatadi.
 - **TCP/IP Stack Avtomatik Sozlash**: O'yinlar va internet ko'rishda ping (latency) va buferlanishni optimallashtiradi.
 - **Jonli DNS Benchmark**: Dunyodagi eng tezkor xavfsiz DNS serverlar (Cloudflare `1.1.1.1`, Google `8.8.8.8`, OpenDNS `208.67.222.222`) tezligini o'lchab, millisekundlarda taqqoslaydi.
 
-### 9. 🛠️ Windows Tizim Sozlamalari va Maxfiylik (Tweaks & Privacy)
+### 10. 🛠️ Windows Tizim Sozlamalari va WinSxS (Tweaks & Updates)
+- **Windows Update Keshini Tozalash**: Eskirgan yangilanish fayllarini `SoftwareDistribution\Download` va `DeliveryOptimization` papkalaridan xavfsiz tozalaydi.
+- **WinSxS Komponentlar Ombori (DISM)**: Rasmiy Microsoft `dism.exe /Online /Cleanup-Image /StartComponentCleanup` orqali eskirgan Windows paketlari va xizmat fayllarini siqib, 10–25+ GB gacha joy bo'shatadi.
 - **Keraksiz Tizim Dasturlarini O'chirish (Bloatware)**: Windows bilan birga o'rnatiladigan ortiqcha UWP ilovalarni (Cortana, Bing News, Xbox telemetriyasi, Solitaire va b.) oson o'chiradi.
 - **Telemetriya va Kuzatuvni Bloklash**: Microsoft DiagTrack va Connected User Experiences kabi josuslik xizmatlarini to'xtatadi.
 - **Boshqaruv Paneli (Start Menu) Sozlash**: Windows menyusidagi Bing internet qidiruvini va reklamalarni olib tashlaydi.
 - **O'yin Rejimi**: GPU yuklamasini va sichqoncha tezlanishini o'yinlar uchun moslashtiradi.
 
-### 10. 💻 Qurilmalar Holati Monitoringi (Hardware Monitor)
+### 11. 💻 Qurilmalar Holati Monitoringi (Hardware Monitor)
 - Real vaqtda barcha texnik qismlarni nazorat qiladi:
   - **Protsessor (CPU)**: Model, arxitektura, yadrolar soni va joriy yuklanish foizi.
   - **Xotira (RAM)**: Umumiy, band va bo'sh hajm, real vaqt grafigi.
@@ -127,21 +143,21 @@ CleanGuard Majmuasi
   - **Ona plata va BIOS**: Ishlab chiqaruvchi, model va BIOS versiyasi.
   - **Operatsion Tizim**: Windows nashri, yig'ma raqami (masalan, 22631) va arxitekturasi.
 
-### 11. ⏰ Avtomatik Xizmat Rejalashtiruvchisi (Auto-Care)
+### 12. ⏰ Avtomatik Xizmat Rejalashtiruvchisi (Auto-Care)
 - Windows Task Scheduler bilan integratsiya qilingan.
 - Tozalashni belgilangan vaqtda (Har kuni, Haftada bir marta yoki Kompyuter bo'sh turganda) avtomatik bajaradi.
 - Interfeyssiz fon rejimida (`--auto-clean`) xavfsiz tozalashni amalga oshiradi.
 
-### 12. 🔄 Tizimni Qayta Tiklash Nuqtasi (System Restore Point)
+### 13. 🔄 Tizimni Qayta Tiklash Nuqtasi (System Restore Point)
 - Windows VSS xizmati orqali har qanday xavfli tozalashdan avval rasmiy tiklash nuqtasini hosil qiladi.
 - Foydalanuvchiga to'liq xotirjamlik va ishonchlilik kafolatini beradi.
 
-### 13. 📜 Audit Tarixi va Hisobotlar
+### 14. 📜 Audit Tarixi va Hisobotlar
 - Har bir tozalash tafsilotlari mahalliy SQLite ma'lumotlar bazasida **WAL (Write-Ahead Logging)** rejimida qayd etiladi.
 - Umumiy tejalgan xotira hajmi va o'chirilgan fayllar statistikasi.
 - Natijalarni **CSV** va **JSON** formatlarida hisobot sifatida eksport qilish imkoniyati.
 
-### 14. 🎨 Fluent Zamonaviy UI va 3 Tilli Tizim
+### 15. 🎨 Fluent Zamonaviy UI va 3 Tilli Tizim
 - Windows Fluent Design tamoyillari asosida yaratilgan zamonaviy quyuq (dark mode) interfeys.
 - Dasturni qayta ishga tushirmasdan bir zumda tilni almashtirish imkoniyati:
   - 🇺🇿 **O'zbekcha** (Asosiy til)
@@ -192,14 +208,22 @@ python -m cleanguard.app.main --auto-clean
 
 ## 🧪 Avtomatlashtirilgan Sinovlar (Testing)
 
-Loyihada xavfsizlik, xeshlar, reestrni qaytarish va interfeys bo'yicha 25 dan ortiq keng qamrovli test to'plamlari mavjud:
+Loyihada xavfsizlik, xeshlar, reestrni qaytarish, 1-bosishli Smart Care, Windows Update DISM tozalash, katta fayllar tahlili va interfeys bo'yicha 28 ta keng qamrovli test to'plamlari (**132 ta muvaffaqiyatli test**) mavjud:
 
 ```powershell
 # Sinov kutubxonalarini o'rnatish
 pip install -r requirements-dev.txt
 
-# Barcha testlarni ishga tushirish
+# Barcha 132 ta testlarni ishga tushirish
 pytest -v tests/
+
+# Alohida komponent testlarini ishga tushirish
+pytest -v tests/test_smart_care.py
+pytest -v tests/test_updates.py
+pytest -v tests/test_large_files.py
+pytest -v tests/test_safety_engine.py
+pytest -v tests/test_registry_cleaner.py
+pytest -v tests/test_network.py
 ```
 
 ---

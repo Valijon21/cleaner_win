@@ -160,15 +160,24 @@ class StartupPage(QWidget):
         filtered: List[StartupItem] = []
         for it in self.items:
             # Text filter
-            if query and query not in it.name.lower() and query not in (it.publisher or "").lower():
+            if (
+                query
+                and query not in it.name.lower()
+                and query not in (it.publisher or "").lower()
+                and query not in it.command.lower()
+            ):
                 continue
 
-            # Status filter
+            # Category / Status filter
             if filter_idx == 1 and not it.enabled:
                 continue
             elif filter_idx == 2 and it.enabled:
                 continue
             elif filter_idx == 3 and it.impact != "High":
+                continue
+            elif filter_idx == 4 and it.location_type == "SCHEDULED_TASK":
+                continue
+            elif filter_idx == 5 and it.location_type != "SCHEDULED_TASK":
                 continue
 
             filtered.append(it)
@@ -176,6 +185,16 @@ class StartupPage(QWidget):
         self._populate_table(filtered)
 
     def _populate_table(self, items: List[StartupItem]) -> None:
+        loc_display_map = {
+            "HKCU_RUN": "Reestr (HKCU)",
+            "HKLM_RUN": "Reestr (HKLM)",
+            "HKLM_WOW64_RUN": "Reestr (32-bit)",
+            "HKCU_WOW64_RUN": "Reestr (HKCU 32-bit)",
+            "USER_FOLDER": "Autostart Papkasi",
+            "COMMON_FOLDER": "Umumiy Papka",
+            "SCHEDULED_TASK": "Vazifalar Rejasi",
+        }
+
         self.table.setUpdatesEnabled(False)
         try:
             self.table.setRowCount(len(items))
@@ -183,8 +202,9 @@ class StartupPage(QWidget):
             for row, it in enumerate(items):
                 # Name
                 item_name = QTableWidgetItem(f"  {it.name}")
+                item_name.setToolTip(f"{it.name}\n{it.command}")
                 if it.risk_level == RiskLevel.BLOCKED:
-                    item_name.setToolTip("Windows tizim fayli — o'chirish taqiqlanadi")
+                    item_name.setToolTip(f"{it.name}\nWindows tizim fayli — o'chirish taqiqlanadi\n{it.command}")
                 self.table.setItem(row, 0, item_name)
 
                 # Publisher
@@ -203,9 +223,11 @@ class StartupPage(QWidget):
                     item_impact.setForeground(Qt.green)
                 self.table.setItem(row, 2, item_impact)
 
-                # Location
-                item_loc = QTableWidgetItem(it.location_type)
+                # Location with tooltip
+                loc_text = loc_display_map.get(it.location_type, it.location_type)
+                item_loc = QTableWidgetItem(loc_text)
                 item_loc.setTextAlignment(Qt.AlignCenter)
+                item_loc.setToolTip(it.command)
                 self.table.setItem(row, 3, item_loc)
 
                 # Status
@@ -241,6 +263,8 @@ class StartupPage(QWidget):
             tr("filter_active_only", "Faqat faollar"),
             tr("filter_disabled_only", "Faqat o'chirilganlar"),
             tr("filter_high_impact_only", "Yuqori ta'sirlilar"),
+            tr("filter_classic_apps", "Klassik Dasturlar (Reestr & Papka)"),
+            tr("filter_scheduled_tasks", "Rejalashtirilgan Vazifalar (Task Scheduler)"),
         ])
         if 0 <= cur_idx < self.combo_filter.count():
             self.combo_filter.setCurrentIndex(cur_idx)

@@ -55,3 +55,64 @@ def test_blocked_item_cannot_be_disabled():
     success, msg = mgr.set_startup_state(item, False)
     assert success is False
     assert "critical" in msg.lower()
+
+
+def test_unquoted_executable_path_with_spaces():
+    mgr = StartupManager()
+    unquoted = r"C:\Program Files (x86)\Vendor\App.exe -auto"
+    assert mgr._extract_executable_path(unquoted) == r"C:\Program Files (x86)\Vendor\App.exe"
+
+    bat_cmd = r"C:\Tools and Scripts\runner.bat --silent"
+    assert mgr._extract_executable_path(bat_cmd) == r"C:\Tools and Scripts\runner.bat"
+
+
+def test_approved_enabled_eval():
+    mgr = StartupManager()
+    with patch("winreg.OpenKey") as mock_open:
+        with patch("winreg.QueryValueEx") as mock_val:
+            # Even first byte (0x02) = enabled
+            mock_val.return_value = (b"\x02\x00\x00\x00", 3)
+            assert mgr._is_approved_enabled(0, "Subkey", "Item1") is True
+
+            # Odd first byte (0x03) = disabled
+            mock_val.return_value = (b"\x03\x00\x00\x00", 3)
+            assert mgr._is_approved_enabled(0, "Subkey", "Item1") is False
+
+
+def test_scan_scheduled_tasks_mock():
+    mgr = StartupManager()
+    csv_mock = (
+        '"HostName","TaskName","Schedule Type","Task To Run","Scheduled Task State"\n'
+        '"PC","\\MyVendorApp","At logon time","C:\\Program Files\\Vendor\\app.exe -silent","Enabled"\n'
+        '"PC","\\Microsoft\\Windows\\Telemetry","Daily","C:\\Windows\\System32\\telemetry.exe","Enabled"\n'
+    )
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0, stdout=csv_mock)
+        tasks = mgr._scan_scheduled_tasks()
+        # Telemetry under \Microsoft\Windows\ must be excluded
+        assert len(tasks) == 1
+        assert tasks[0].name == "MyVendorApp"
+        assert tasks[0].enabled is True
+        assert tasks[0].location_type == "SCHEDULED_TASK"
+
+
+def test_toggle_scheduled_task_mock():
+    mgr = StartupManager()
+    item = StartupItem(
+        id="TASK_VendorApp",
+        name="VendorApp",
+        command="app.exe",
+        location_type="SCHEDULED_TASK",
+        enabled=True,
+        risk_level=RiskLevel.REVIEW,
+        impact="Medium",
+    )
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+        success, msg = mgr.set_startup_state(item, False)
+        assert success is True
+        assert item.enabled is False
+        mock_run.assert_called_once()
+        called_args = mock_run.call_args[0][0]
+        assert "schtasks.exe" in called_args
+        assert "/disable" in called_args

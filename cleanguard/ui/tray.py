@@ -3,6 +3,8 @@ CleanGuard System Tray Icon & Notification Management.
 Provides background residency, tray context menu, and intelligent balloon alerts.
 """
 
+import os
+import sys
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenu, QAction
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QBrush, QPen, QFont
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -12,7 +14,7 @@ from cleanguard.utils.formatting import format_bytes
 
 
 def create_default_tray_icon() -> QIcon:
-    """Create a crisp 32x32 emerald shield pixmap icon for Windows System Tray."""
+    """Create an emerald shield pixmap icon fallback for Windows System Tray."""
     pix = QPixmap(32, 32)
     pix.fill(Qt.transparent)
 
@@ -36,6 +38,24 @@ def create_default_tray_icon() -> QIcon:
     return QIcon(pix)
 
 
+def get_app_icon() -> QIcon:
+    """Resolve and load the multi-resolution CleanGuard icon from assets, with runtime fallback."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    candidate_paths = [
+        os.path.join(base_dir, "assets", "cleanguard.ico"),
+        os.path.join(base_dir, "assets", "cleanguard.png"),
+        os.path.join(getattr(sys, "_MEIPASS", ""), "assets", "cleanguard.ico"),
+        os.path.join(getattr(sys, "_MEIPASS", ""), "assets", "cleanguard.png"),
+    ]
+    for p in candidate_paths:
+        if p and os.path.isfile(p):
+            icon = QIcon(p)
+            if not icon.isNull():
+                return icon
+
+    return create_default_tray_icon()
+
+
 class CleanGuardTrayIcon(QSystemTrayIcon):
     """System Tray Icon controller with localized context menu and smart notifications."""
     show_window_requested = pyqtSignal()
@@ -44,7 +64,7 @@ class CleanGuardTrayIcon(QSystemTrayIcon):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setIcon(create_default_tray_icon())
+        self.setIcon(get_app_icon())
         self.setToolTip("CleanGuard — Windows Storage Optimizer")
 
         self._init_menu()

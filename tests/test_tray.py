@@ -2,13 +2,26 @@
 Unit tests for CleanGuard System Tray Icon and Context Menu.
 """
 
-from cleanguard.ui.tray import CleanGuardTrayIcon, create_default_tray_icon
+from cleanguard.ui.tray import CleanGuardTrayIcon, create_default_tray_icon, get_app_icon
 from cleanguard.core.contracts import DriveInfo
 
 
 def test_tray_icon_creation(qapp):
     icon = create_default_tray_icon()
     assert icon.isNull() is False
+
+
+def test_get_app_icon_multi_resolution(qapp):
+    icon = get_app_icon()
+    assert icon.isNull() is False
+    sizes = icon.availableSizes()
+    assert len(sizes) >= 1
+    # Check that standard icon sizes exist when loaded from assets
+    size_tuples = [(s.width(), s.height()) for s in sizes]
+    if (256, 256) in size_tuples:
+        assert (16, 16) in size_tuples
+        assert (32, 32) in size_tuples
+        assert (48, 48) in size_tuples
 
 
 def test_tray_controller_and_actions(qapp):

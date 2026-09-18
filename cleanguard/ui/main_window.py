@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QApplication,
     QScrollArea,
+    QSystemTrayIcon,
 )
 from PyQt5.QtCore import Qt
 from cleanguard.app.version import APP_NAME, APP_VERSION
@@ -35,7 +36,7 @@ from cleanguard.ui.tweaks_page import TweaksPage
 from cleanguard.ui.network_page import NetworkPage
 from cleanguard.ui.registry_page import RegistryPage
 from cleanguard.ui.hardware_page import HardwarePage
-from cleanguard.ui.tray import CleanGuardTrayIcon
+from cleanguard.ui.tray import CleanGuardTrayIcon, get_app_icon
 from cleanguard.services.scan_service import ScanWorker
 from cleanguard.services.cleanup_service import CleanupWorker
 from cleanguard.services.monitor_service import StorageMonitorService
@@ -69,6 +70,7 @@ class MainWindow(QMainWindow):
         self.resize(1180, 760)
         self.setMinimumSize(960, 620)
         self.setStyleSheet(DARK_STYLESHEET)
+        self.setWindowIcon(get_app_icon())
 
         self._init_shell()
         self._init_tray_and_monitor(enable_monitor=enable_monitor)
@@ -493,6 +495,17 @@ class MainWindow(QMainWindow):
         self.navigate_to(0)
 
     def closeEvent(self, event) -> None:
+        if not getattr(self, "_force_quit", False) and self.config.get("minimize_to_tray", False) and hasattr(self, "tray_icon") and self.tray_icon.isVisible():
+            self.hide()
+            self.tray_icon.showMessage(
+                tr("tray_minimized_title"),
+                tr("tray_minimized_msg"),
+                QSystemTrayIcon.Information,
+                2500,
+            )
+            event.ignore()
+            return
+
         try:
             get_localization().unregister_listener(self.retranslate_ui)
         except Exception:

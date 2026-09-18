@@ -49,6 +49,13 @@ def bootstrap_application() -> QApplication:
     app.setApplicationName("CleanGuard")
     app.setApplicationDisplayName("CleanGuard Professional")
 
+    # Set application-wide brand icon
+    try:
+        from cleanguard.ui.tray import get_app_icon
+        app.setWindowIcon(get_app_icon())
+    except Exception:
+        pass
+
     # Hook graceful shutdown of logging listener
     app.aboutToQuit.connect(shutdown_logging)
 

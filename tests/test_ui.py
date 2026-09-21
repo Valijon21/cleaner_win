@@ -39,6 +39,26 @@ def test_stat_card_and_risk_badge(qapp):
     assert len(badge_blocked.text()) > 0
 
 
+def test_circular_scan_button_painting(qapp):
+    """Verify CircularScanButton paintEvent renders cleanly in all states without TypeError."""
+    from cleanguard.ui.widgets.buttons import CircularScanButton
+    from PyQt5.QtGui import QPixmap
+
+    btn = CircularScanButton()
+    pix = QPixmap(140, 140)
+
+    # Test normal state
+    btn.render(pix)
+
+    # Test hovered state
+    btn._is_hovered = True
+    btn.render(pix)
+
+    # Test pressed state
+    btn._is_pressed = True
+    btn.render(pix)
+
+
 def test_drive_card(qapp):
     d = DriveInfo(
         letter="C:",

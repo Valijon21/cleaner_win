@@ -5,7 +5,7 @@ Inspired by IObit Advanced SystemCare Pro.
 
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPainter, QRadialGradient, QLinearGradient, QColor, QPen, QBrush
-from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtCore import Qt, QPointF, QRectF
 from cleanguard.localization import tr
 
 
@@ -132,7 +132,8 @@ class CircularScanButton(QPushButton):
         top_specular.setColorAt(1.0, QColor(255, 255, 255, 0))
         painter.setPen(Qt.NoPen)
         painter.setBrush(QBrush(top_specular))
-        painter.drawEllipse(center.x() - 40, center.y() - 52, 80, 50)
+        specular_rect = QRectF(center.x() - 40.0, center.y() - 52.0, 80.0, 50.0)
+        painter.drawEllipse(specular_rect)
 
         painter.end()
 

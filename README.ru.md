@@ -207,18 +207,38 @@ python -m cleanguard.app.main --auto-clean
 
 ---
 
+## 📦 Сборка независимого `.exe` и установщика (Packaging & Installer)
+
+Сборка CleanGuard в виде автономного портативного `.exe` и официального инсталлятора Inno Setup:
+
+```powershell
+# 1. Сборка автономного исполняемого файла CleanGuard.exe через PyInstaller
+python scripts/build.py
+
+# Результат: dist/CleanGuard.exe (с манифестом администратора UAC и встроенными ресурсами)
+
+# 2. Создание официального мультиязычного установщика через Inno Setup
+iscc installer/cleanguard_setup.iss
+
+# Результат: dist/installer/CleanGuard_Setup_v0.1.0.exe
+```
+
+---
+
 ## 🧪 Автоматизированное тестирование
 
-В репозитории содержится 28 наборов модульных и интеграционных тестов (**132 успешных теста**):
+В репозитории содержится 32 набора модульных и интеграционных тестов (**138 успешных тестов**), охватывающих многотемный дизайн, списки исключений (Whitelist), 1-Click Smart Care, очистку обновлений DISM, поиск дубликатов, реестр и пользовательский интерфейс:
 
 ```powershell
 # Установка тестовых зависимостей
 pip install -r requirements-dev.txt
 
-# Запуск всех 132 тестов
+# Запуск всех 138 тестов
 pytest -v tests/
 
 # Запуск тестов отдельных компонентов
+pytest -v tests/test_themes.py
+pytest -v tests/test_whitelist.py
 pytest -v tests/test_smart_care.py
 pytest -v tests/test_updates.py
 pytest -v tests/test_large_files.py

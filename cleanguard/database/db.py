@@ -6,7 +6,8 @@ import os
 import sqlite3
 import threading
 import time
-from typing import Optional
+from contextlib import contextmanager
+from typing import Optional, Generator
 from cleanguard.database.schema import CREATE_TABLES_SQL, CURRENT_SCHEMA_VERSION
 from cleanguard.utils.logging import get_logger
 
@@ -43,12 +44,25 @@ class DatabaseManager:
         conn.execute("PRAGMA foreign_keys=ON;")
         return conn
 
+    @contextmanager
+    def session(self) -> Generator[sqlite3.Connection, None, None]:
+        """Provide a transactional and auto-closing SQLite connection."""
+        conn = self.get_connection()
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def _initialize_database(self) -> None:
         """Apply schema and run migrations."""
         with self._lock:
             try:
                 os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
-                with self.get_connection() as conn:
+                with self.session() as conn:
                     cursor = conn.cursor()
                     cursor.executescript(CREATE_TABLES_SQL)
 
@@ -60,8 +74,8 @@ class DatabaseManager:
                             "INSERT INTO schema_version (version, applied_at) VALUES (?, ?);",
                             (CURRENT_SCHEMA_VERSION, time.time()),
                         )
-                    conn.commit()
                 logger.info(f"Database initialized successfully at {self.db_path}.")
             except Exception as exc:
                 logger.error(f"Failed to initialize database: {exc}")
                 raise
+

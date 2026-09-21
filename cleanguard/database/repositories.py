@@ -24,7 +24,7 @@ class HistoryRepository:
             safe_items, review_items, blocked_items
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
-        with self.db.get_connection() as conn:
+        with self.db.session() as conn:
             conn.execute(
                 sql,
                 (
@@ -56,7 +56,7 @@ class HistoryRepository:
             size, error_code, error_message
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
-        with self.db.get_connection() as conn:
+        with self.db.session() as conn:
             conn.execute(
                 session_sql,
                 (
@@ -122,7 +122,7 @@ class HistoryRepository:
         ORDER BY started_at DESC
         LIMIT ?;
         """
-        with self.db.get_connection() as conn:
+        with self.db.session() as conn:
             cursor = conn.cursor()
             cursor.execute(sql, (limit,))
             rows = cursor.fetchall()
@@ -137,7 +137,7 @@ class HistoryRepository:
         ORDER BY size DESC
         LIMIT ?;
         """
-        with self.db.get_connection() as conn:
+        with self.db.session() as conn:
             cursor = conn.cursor()
             cursor.execute(sql, (cleanup_id, limit))
             return [dict(r) for r in cursor.fetchall()]
@@ -149,7 +149,7 @@ class HistoryRepository:
             "total_bytes_recovered": 0.0,
             "total_files_deleted": 0.0,
         }
-        with self.db.get_connection() as conn:
+        with self.db.session() as conn:
             cursor = conn.cursor()
             cursor.execute(sql)
             for row in cursor.fetchall():

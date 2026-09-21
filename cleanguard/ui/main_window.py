@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from cleanguard.app.version import APP_NAME, APP_VERSION
-from cleanguard.ui.theme import DARK_STYLESHEET
+from cleanguard.ui.theme import DARK_STYLESHEET, get_theme_stylesheet
 from cleanguard.ui.dashboard_page import DashboardPage
 from cleanguard.ui.scan_page import ScanPage
 from cleanguard.ui.results_page import ResultsPage
@@ -70,7 +70,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION}")
         self.resize(1180, 760)
         self.setMinimumSize(960, 620)
-        self.setStyleSheet(DARK_STYLESHEET)
+        current_theme = self.config.get("theme", "dark")
+        self.setStyleSheet(get_theme_stylesheet(current_theme))
         self.setWindowIcon(get_app_icon())
 
         self._init_shell()
@@ -245,6 +246,7 @@ class MainWindow(QMainWindow):
         self.page_cleanup = CleanupPage()
         self.page_history = HistoryPage(self.db)
         self.page_settings = SettingsPage()
+        self.page_settings.theme_changed.connect(self.apply_theme)
         self.page_about = AboutPage()
         self.page_startup = StartupPage()
         self.page_duplicates = DuplicatesPage()
@@ -359,6 +361,13 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.Yes:
             if request_elevation():
                 self._on_force_exit()
+
+    def apply_theme(self, theme_name: str) -> None:
+        """Apply a named theme to the entire application dynamically."""
+        sheet = get_theme_stylesheet(theme_name)
+        self.setStyleSheet(sheet)
+        self.config.set("theme", theme_name)
+        logger.info(f"Theme switched dynamically to: {theme_name}")
 
     def retranslate_ui(self, lang_code: str = "") -> None:
         """Update navigation labels, tray actions, and subpages dynamically."""

@@ -206,18 +206,37 @@ python -m cleanguard.app.main --auto-clean
 
 ---
 
+## 📦 Mustaqil `.exe` Yig'ish va O'rnatuvchi (Packaging & Installer)
+
+CleanGuard dasturini Windows uchun mustaqil portable `.exe` va rasmiy Inno Setup o'rnatuvchi holatida yig'ish:
+
+```powershell
+# 1. PyInstaller orqali CleanGuard.exe standalone dasturini yig'ish
+python scripts/build.py
+
+# Natija: dist/CleanGuard.exe (UAC administrator manifesti va barcha resurslar bilan)
+
+# 2. Inno Setup orqali rasmiy ko'p tilli (O'zbek, Rus, Ingliz) o'rnatuvchini hosil qilish
+iscc installer/cleanguard_setup.iss
+
+# Natija: dist/installer/CleanGuard_Setup_v0.1.0.exe
+```
+
+---
+
 ## 🧪 Avtomatlashtirilgan Sinovlar (Testing)
 
-Loyihada xavfsizlik, xeshlar, reestrni qaytarish, 1-bosishli Smart Care, Windows Update DISM tozalash, katta fayllar tahlili va interfeys bo'yicha 28 ta keng qamrovli test to'plamlari (**132 ta muvaffaqiyatli test**) mavjud:
+Loyihada xavfsizlik, xeshlar, reestrni qaytarish, 1-bosishli Smart Care, Windows Update DISM tozalash, ko'p mavzuli dizayn tizimi (Multi-Theme), foydalanuvchi mustasnolari (Whitelist), katta fayllar tahlili va interfeys bo'yicha 32 ta keng qamrovli test to'plamlari (**138 ta muvaffaqiyatli test**) mavjud:
 
 ```powershell
 # Sinov kutubxonalarini o'rnatish
 pip install -r requirements-dev.txt
 
-# Barcha 132 ta testlarni ishga tushirish
+# Barcha 138 ta testlarni ishga tushirish
 pytest -v tests/
 
 # Alohida komponent testlarini ishga tushirish
+pytest -v tests/test_themes.py
 pytest -v tests/test_smart_care.py
 pytest -v tests/test_updates.py
 pytest -v tests/test_large_files.py

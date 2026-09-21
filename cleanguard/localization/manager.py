@@ -4,6 +4,7 @@ Provides dynamic language switching across Uzbek, Russian, and English.
 """
 
 import os
+import sys
 import json
 from typing import Dict, Optional
 from cleanguard.core.config import ConfigManager
@@ -60,13 +61,34 @@ class LocalizationManager:
                 except Exception as exc:
                     logger.warning(f"Error in language listener callback: {exc}")
 
-    def _load_language(self, lang_code: str) -> None:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        lang_file = os.path.join(base_dir, f"{lang_code}.json")
+    def _find_language_file(self, lang_code: str) -> Optional[str]:
+        """Find the localization JSON file, accounting for frozen PyInstaller environment."""
+        candidate_dirs = [
+            os.path.dirname(os.path.abspath(__file__)),
+        ]
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidate_dirs.insert(0, os.path.join(meipass, "cleanguard", "localization"))
+            candidate_dirs.insert(1, os.path.join(meipass, "localization"))
 
-        # Fallback to en.json if requested file does not exist
-        if not os.path.exists(lang_file):
-            lang_file = os.path.join(base_dir, "en.json")
+        for d in candidate_dirs:
+            p = os.path.join(d, f"{lang_code}.json")
+            if os.path.isfile(p):
+                return p
+
+        # Fallback to English
+        for d in candidate_dirs:
+            p = os.path.join(d, "en.json")
+            if os.path.isfile(p):
+                return p
+        return None
+
+    def _load_language(self, lang_code: str) -> None:
+        lang_file = self._find_language_file(lang_code)
+        if not lang_file or not os.path.exists(lang_file):
+            logger.error(f"Could not locate localization file for '{lang_code}' (or fallback en.json).")
+            self._strings = {}
+            return
 
         try:
             with open(lang_file, "r", encoding="utf-8") as f:

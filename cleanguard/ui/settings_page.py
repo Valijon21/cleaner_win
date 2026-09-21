@@ -3,7 +3,7 @@ Settings Page: Configuration of language, safety rules, scanner categories, and 
 """
 
 import logging
-from typing import Dict
+from typing import Dict, Optional
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QMessageBox,
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from cleanguard.core.config import ConfigManager
 from cleanguard.localization import get_localization, tr, SUPPORTED_LANGUAGES
 from cleanguard.security.protected_paths import ProtectedPathRegistry
@@ -35,6 +35,8 @@ from cleanguard.utils.formatting import format_bytes
 class SettingsPage(QWidget):
     """Comprehensive user configuration screen."""
 
+    theme_changed = pyqtSignal(str)
+
     CATEGORIES = [
         ("temp_files", "category_temp_files"),
         ("app_cache", "category_app_cache"),
@@ -45,9 +47,9 @@ class SettingsPage(QWidget):
         ("recycle_bin", "category_recycle_bin"),
     ]
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, config: Optional[ConfigManager] = None):
         super().__init__(parent)
-        self.config = ConfigManager()
+        self.config = config or ConfigManager()
         self.loc = get_localization()
         self.path_registry = ProtectedPathRegistry(self.config)
         self.category_checkboxes: Dict[str, QCheckBox] = {}
@@ -97,6 +99,24 @@ class SettingsPage(QWidget):
         lang_row.addStretch()
         lang_row.addWidget(self.combo_lang)
         gen_layout.addLayout(lang_row)
+
+        # Theme row
+        theme_row = QHBoxLayout()
+        self.lbl_theme = QLabel(tr("settings_app_theme"))
+        self.lbl_theme.setStyleSheet("font-size: 14px; font-weight: 500; color: #F9FAFB;")
+        self.combo_theme = QComboBox()
+        self._populate_theme_combo()
+
+        cur_theme = self.config.get("theme", "dark")
+        theme_idx = self.combo_theme.findData(cur_theme)
+        if theme_idx >= 0:
+            self.combo_theme.setCurrentIndex(theme_idx)
+        self.combo_theme.currentIndexChanged.connect(self._on_theme_changed)
+
+        theme_row.addWidget(self.lbl_theme)
+        theme_row.addStretch()
+        theme_row.addWidget(self.combo_theme)
+        gen_layout.addLayout(theme_row)
 
         # Confirm before cleanup
         self.chk_confirm = QCheckBox(tr("settings_confirm_cleanup"))
@@ -207,6 +227,12 @@ class SettingsPage(QWidget):
         self.btn_add_path.setCursor(Qt.PointingHandCursor)
         self.btn_add_path.clicked.connect(self._on_add_protected_path)
         prot_btn_row.addWidget(self.btn_add_path)
+
+        self.btn_add_file = QPushButton(f"  + {tr('settings_add_file')}  ")
+        self.btn_add_file.setObjectName("SecondaryButton")
+        self.btn_add_file.setCursor(Qt.PointingHandCursor)
+        self.btn_add_file.clicked.connect(self._on_add_protected_file)
+        prot_btn_row.addWidget(self.btn_add_file)
 
         self.btn_remove_path = QPushButton(f"  - {tr('settings_remove_path')}  ")
         self.btn_remove_path.setObjectName("SecondaryButton")
@@ -386,6 +412,12 @@ class SettingsPage(QWidget):
             self.path_registry.add_custom_protected_path(folder)
             self._reload_protected_list()
 
+    def _on_add_protected_file(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select File to Protect", filter="All Files (*.*)")
+        if file_path:
+            self.path_registry.add_custom_protected_path(file_path)
+            self._reload_protected_list()
+
     def _on_remove_protected_path(self) -> None:
         current_item = self.list_protected.currentItem()
         if current_item:
@@ -400,6 +432,25 @@ class SettingsPage(QWidget):
         ]
         self.config.set("enabled_categories", enabled)
 
+    def _populate_theme_combo(self) -> None:
+        self.combo_theme.blockSignals(True)
+        self.combo_theme.clear()
+        themes = [
+            ("dark", tr("theme_dark", "CleanGuard Dark Pro (Zumrad)")),
+            ("midnight", tr("theme_midnight", "Cyberpunk Midnight (Moviy Neon)")),
+            ("stealth", tr("theme_stealth", "Stealth OLED (Mutlaq qora)")),
+            ("light", tr("theme_light", "Clean Light (Yorug' biznes)")),
+        ]
+        for t_id, t_name in themes:
+            self.combo_theme.addItem(t_name, t_id)
+        self.combo_theme.blockSignals(False)
+
+    def _on_theme_changed(self, index: int) -> None:
+        theme_id = self.combo_theme.itemData(index)
+        if theme_id:
+            self.config.set("theme", theme_id)
+            self.theme_changed.emit(theme_id)
+
     def _on_language_changed(self, index: int) -> None:
         lang_code = self.combo_lang.itemData(index)
         self.loc.set_language(lang_code)
@@ -408,6 +459,12 @@ class SettingsPage(QWidget):
         """Dynamically update all text labels on language change."""
         self.lbl_title.setText(tr("nav_settings"))
         self.lbl_lang.setText(tr("settings_app_language"))
+        self.lbl_theme.setText(tr("settings_app_theme"))
+        cur_theme_data = self.combo_theme.currentData()
+        self._populate_theme_combo()
+        t_idx = self.combo_theme.findData(cur_theme_data)
+        if t_idx >= 0:
+            self.combo_theme.setCurrentIndex(t_idx)
         self.chk_confirm.setText(tr("settings_confirm_cleanup"))
         self.chk_auto_scan.setText(tr("settings_auto_scan"))
         self.chk_tray.setText(tr("settings_minimize_tray"))
@@ -415,6 +472,7 @@ class SettingsPage(QWidget):
         self.lbl_cat_title.setText(tr("settings_scanner_categories"))
         self.lbl_prot_title.setText(tr("settings_protected_paths"))
         self.btn_add_path.setText(f"  + {tr('settings_add_path')}  ")
+        self.btn_add_file.setText(f"  + {tr('settings_add_file')}  ")
         self.btn_remove_path.setText(f"  - {tr('settings_remove_path')}  ")
 
         self.lbl_diag_title.setText(tr("settings_diagnostics_title"))

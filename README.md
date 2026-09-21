@@ -285,18 +285,38 @@ python -m cleanguard.app.main --auto-clean
 
 ---
 
+## 📦 Standalone Packaging & Installer
+
+Build a standalone, single-file Windows executable and official multilingual Inno Setup installer:
+
+```powershell
+# 1. Compile standalone CleanGuard.exe with PyInstaller
+python scripts/build.py
+
+# Output: dist/CleanGuard.exe (with UAC manifest and embedded resources)
+
+# 2. Build official multilingual installer with Inno Setup
+iscc installer/cleanguard_setup.iss
+
+# Output: dist/installer/CleanGuard_Setup_v0.1.0.exe
+```
+
+---
+
 ## 🧪 Automated Testing
 
-CleanGuard maintains 28 comprehensive unit and integration test suites (**132 passing tests**) covering path safety, duplicate file hashing, 1-Click Smart Care, Windows Update DISM cleanup, large file scanner, registry rollback, hardware metrics, and UI responsiveness.
+CleanGuard maintains 32 comprehensive unit and integration test suites (**138 passing tests**) covering path safety, duplicate file hashing, 1-Click Smart Care, Windows Update DISM cleanup, multi-theme design system, custom whitelist exclusions, large file scanner, registry rollback, hardware metrics, and UI responsiveness.
 
 ```powershell
 # Install development dependencies
 pip install -r requirements-dev.txt
 
-# Execute all 132 test suites
+# Execute all 138 tests
 pytest -v tests/
 
 # Execute specific component tests
+pytest -v tests/test_themes.py
+pytest -v tests/test_whitelist.py
 pytest -v tests/test_smart_care.py
 pytest -v tests/test_updates.py
 pytest -v tests/test_large_files.py

@@ -3,6 +3,7 @@ Main Window: Application shell containing sidebar navigation, view stack,
 UAC elevation controls, system tray icon, and background storage monitoring.
 """
 
+import time
 from typing import List, Optional
 from PyQt5.QtWidgets import (
     QMainWindow,
@@ -18,7 +19,7 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QSystemTrayIcon,
 )
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QThread
 from cleanguard.app.version import APP_NAME, APP_VERSION
 from cleanguard.ui.theme import DARK_STYLESHEET, get_theme_stylesheet
 from cleanguard.ui.dashboard_page import DashboardPage
@@ -321,34 +322,71 @@ class MainWindow(QMainWindow):
         self._show_and_activate()
         self._on_dashboard_start_scan()
 
+    # Background threads are never killed with QThread.terminate(): that can stop a
+    # thread while it holds a lock or is half-way through deleting a file.
+    _SHUTDOWN_GRACE_MS = 12000  # longest bounded worker: PowerShell queries time out at 10 s
+
+    def _busy_operation(self) -> Optional[str]:
+        """Name of a running operation that must not be interrupted by closing the app."""
+        if self.cleanup_worker is not None and self.cleanup_worker.isRunning():
+            return tr("nav_cleanup_operation", "Tozalash")
+        smart = getattr(self.page_dashboard, "smart_care_worker", None)
+        if smart is not None and smart.isRunning():
+            return "Smart Care"
+        dism = getattr(self.page_tweaks, "_dism_worker", None)
+        if dism is not None and dism.isRunning():
+            return "DISM"
+        return None
+
+    def _confirm_can_quit(self) -> bool:
+        busy = self._busy_operation()
+        if busy is None:
+            return True
+        QMessageBox.warning(
+            self,
+            tr("msg_warning_title", "Ogohlantirish"),
+            tr(
+                "quit_blocked_busy",
+                "\"{operation}\" jarayoni hali tugamadi. Dasturni yopishdan oldin uning yakunlanishini kuting.",
+                operation=busy,
+            ),
+        )
+        return False
+
     def _shutdown_workers(self) -> None:
-        """Safely stop and join all background threads before window destruction."""
+        """Cooperatively stop and join all background threads before window destruction."""
         try:
             get_localization().unregister_listener(self.retranslate_ui)
         except Exception:
             pass
         if hasattr(self, "storage_monitor") and self.storage_monitor is not None:
             self.storage_monitor.stop()
-        if hasattr(self, "scan_worker") and self.scan_worker is not None and self.scan_worker.isRunning():
-            self.scan_worker.cancel()
-            self.scan_worker.wait(1500)
-        if hasattr(self, "cleanup_worker") and self.cleanup_worker is not None and self.cleanup_worker.isRunning():
-            self.cleanup_worker.cancel()
-            self.cleanup_worker.wait(1500)
         if hasattr(self, "page_hardware") and hasattr(self.page_hardware, "timer"):
             self.page_hardware.timer.stop()
         if hasattr(self, "page_turbo") and hasattr(self.page_turbo, "timer"):
             self.page_turbo.timer.stop()
-        if hasattr(self, "page_tweaks") and hasattr(self.page_tweaks, "_bloatware_worker") and self.page_tweaks._bloatware_worker:
-            if self.page_tweaks._bloatware_worker.isRunning():
-                self.page_tweaks._bloatware_worker.terminate()
-        if hasattr(self, "page_large_files") and hasattr(self.page_large_files, "_scan_worker") and self.page_large_files._scan_worker:
-            if self.page_large_files._scan_worker.isRunning():
-                self.page_large_files._scan_worker.cancel()
-                self.page_large_files._scan_worker.wait(1000)
+
+        running = [
+            t for t in self.findChildren(QThread)
+            if t is not getattr(self, "storage_monitor", None) and t.isRunning()
+        ]
+        for thread in running:
+            cancel = getattr(thread, "cancel", None)
+            if callable(cancel):
+                cancel()
+            thread.requestInterruption()
+
+        deadline = time.monotonic() + self._SHUTDOWN_GRACE_MS / 1000.0
+        for thread in running:
+            remaining_ms = max(0, int((deadline - time.monotonic()) * 1000))
+            if not thread.wait(remaining_ms):
+                logger.warning(f"Background thread {type(thread).__name__} did not stop within the grace period.")
 
     def _on_force_exit(self) -> None:
         """Terminate application completely without minimizing to tray."""
+        if not self._confirm_can_quit():
+            self._show_and_activate()
+            return
         self._force_quit = True
         self._shutdown_workers()
         self.close()
@@ -549,6 +587,10 @@ class MainWindow(QMainWindow):
                 QSystemTrayIcon.Information,
                 2500,
             )
+            event.ignore()
+            return
+
+        if not self._confirm_can_quit():
             event.ignore()
             return
 

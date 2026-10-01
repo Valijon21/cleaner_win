@@ -364,5 +364,8 @@
   "leftovers_review": "Проверьте",
   "large_file_delete_confirm": "Переместить этот файл в Корзину?\n\n{name} ({size})\n{path}",
   "large_file_delete_failed": "Не удалось удалить файл: {error}",
-  "large_file_deleted": "Файл перемещён в Корзину, освобождено {size}."
+  "large_file_deleted": "Файл перемещён в Корзину, освобождено {size}.",
+  "nav_cleanup_operation": "Очистка",
+  "quit_blocked_busy": "Операция \"{operation}\" ещё выполняется. Дождитесь её завершения перед закрытием CleanGuard.",
+  "already_running_msg": "CleanGuard уже запущен."
 }

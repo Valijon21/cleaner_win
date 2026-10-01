@@ -31,8 +31,8 @@ class RegistryScanWorker(QThread):
     """Background worker for scanning registry without UI freezes."""
     finished = pyqtSignal(list)
 
-    def __init__(self, cleaner: SafeRegistryCleaner):
-        super().__init__()
+    def __init__(self, cleaner: SafeRegistryCleaner, parent=None):
+        super().__init__(parent)
         self.cleaner = cleaner
 
     def run(self):
@@ -191,7 +191,7 @@ class RegistryPage(QWidget):
     def start_scan(self) -> None:
         self.btn_scan.setEnabled(False)
         self.lbl_status.setText("Reestr skanerlanmoqda...")
-        self.scan_worker = RegistryScanWorker(self.cleaner)
+        self.scan_worker = RegistryScanWorker(self.cleaner, self)
         self.scan_worker.finished.connect(self._on_scan_completed)
         self.scan_worker.start()
 

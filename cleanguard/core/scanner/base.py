@@ -171,6 +171,7 @@ class BaseScanner(ABC):
                         is_junction=False,
                         is_deletable=deletable,
                         selected=(risk.value == "SAFE"),
+                        allowed_roots=list(allowed_roots) if allowed_roots else None,
                     )
                     items.append(item)
                     bytes_found += size

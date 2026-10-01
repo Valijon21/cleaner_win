@@ -364,5 +364,8 @@
   "leftovers_review": "Ko'rib chiqing",
   "large_file_delete_confirm": "Ushbu fayl Savatga (Recycle Bin) ko'chirilsinmi?\n\n{name} ({size})\n{path}",
   "large_file_delete_failed": "Faylni o'chirib bo'lmadi: {error}",
-  "large_file_deleted": "Fayl Savatga ko'chirildi, {size} joy bo'shatildi."
+  "large_file_deleted": "Fayl Savatga ko'chirildi, {size} joy bo'shatildi.",
+  "nav_cleanup_operation": "Tozalash",
+  "quit_blocked_busy": "\"{operation}\" jarayoni hali tugamadi. Dasturni yopishdan oldin uning yakunlanishini kuting.",
+  "already_running_msg": "CleanGuard allaqachon ishlamoqda."
 }

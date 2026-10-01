@@ -364,5 +364,8 @@
   "leftovers_review": "Review",
   "large_file_delete_confirm": "Move this file to the Recycle Bin?\n\n{name} ({size})\n{path}",
   "large_file_delete_failed": "Could not remove the file: {error}",
-  "large_file_deleted": "File moved to the Recycle Bin, {size} freed."
+  "large_file_deleted": "File moved to the Recycle Bin, {size} freed.",
+  "nav_cleanup_operation": "Cleanup",
+  "quit_blocked_busy": "\"{operation}\" is still running. Please wait for it to finish before closing CleanGuard.",
+  "already_running_msg": "CleanGuard is already running."
 }

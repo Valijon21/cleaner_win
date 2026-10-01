@@ -3,7 +3,7 @@
 **Sana:** 2026-10-01
 **Ko'lam:** `cleanguard/` (Python 3.8+ / PyQt5 / Win32 ctypes / SQLite), testlar, sozlamalar oqimi
 **Natija:** 25 ta tasdiqlangan muammo **tuzatildi**, yana 10 tasi keyingi bosqich rejasiga kiritildi (5-bo'lim), 18 ta yangi regressiya testi qo'shildi.
-**Testlar:** `159 passed` (avval 141; 139 eski + 2 yangilangan + 18 yangi)
+**Testlar:** `164 passed` (avval 141 ta edi)
 
 > Har bir topilma kodni o'qib va (imkon bo'lgan joyda) real Windows'da ishga tushirib tasdiqlangan.
 > Mavjud `AUDIT_REPORT.md` dan mustaqil tarzda tekshirildi.
@@ -106,13 +106,20 @@ QT_QPA_PLATFORM=offscreen python -m pytest -q
 
 ---
 
-## 5. Keyingi bosqichlar uchun reja (tuzatilmagan)
+## 5. Ikkinchi bosqich (bajarildi)
+
+| Vazifa | Natija |
+|--------|--------|
+| O'chirishda skaner chegarasini qayta tekshirish | `ScanItem.allowed_roots` → `verify_cleanup_target`. Real skanda 1794 ta SAFE elementning hammasiga chegara biriktirildi; 400 ta tekshirilganidan birortasi ham noto'g'ri rad etilmadi |
+| Bitta nusxa himoyasi | `app/single_instance.py` (`QLockFile` + `QLocalServer`): ikkinchi ishga tushirish mavjud oynani ochadi; Auto-Care GUI ishlayotganda o'tkazib yuboriladi; admin sifatida qayta ishga tushirishda 8 s kutadi |
+| `QThread.terminate()` o'rniga kooperativ to'xtatish | Barcha worker'lar `cancel()` + `requestInterruption()` + umumiy kutish muddati bilan to'xtatiladi; Tozalash/Smart Care/DISM ishlayotganda dasturni yopishga ruxsat berilmaydi (thread ishlab turganda o'chirilib qulashining oldi olindi) |
+| Yashirin xato | Yopishda katta fayllar worker'i noto'g'ri atribut nomi (`_scan_worker`) tufayli umuman to'xtatilmas edi |
+| `.exe` build | `scripts/build.py` → `dist/CleanGuard.exe` (39.8 MB). Ishga tushirildi; ikkinchi nusxa birinchisini faollashtirib, kod 0 bilan chiqdi |
+
+## 6. Keyingi bosqichlar uchun reja (tuzatilmagan)
 
 | Ustuvorlik | Vazifa | Sabab |
 |-----------|--------|-------|
-| Yuqori | `ScanItem`ga skaner `allowed_roots`ini saqlash va `verify_cleanup_target`ga uzatish | Hozir o'chirish paytida chegara (boundary) tekshiruvi ishlatilmaydi; himoyalangan yo'llar tekshiruvi asosiy himoya |
-| Yuqori | Bitta nusxa (single-instance) himoyasi (`QLockFile`) | Ikki nusxa bir vaqtda tozalashi mumkin |
-| Yuqori | `tweaks_page` bloatware worker'ini `terminate()` o'rniga kooperativ bekor qilish | `QThread.terminate()` jarayonni yarim holatda qoldirishi mumkin |
 | O'rta | UI'dagi qattiq yozilgan o'zbekcha matnlar (scheduler xabarlari, katta fayllar tooltip'lari, nav bo'limlari) → `tr()` | en/ru interfeysida aralash til |
 | O'rta | CI'ga `ruff`/`pyflakes` qo'shish; 37 ta ishlatilmagan import, 2 ta bo'sh f-string | Kod sifati |
 | O'rta | O'lik kod: `ignored_paths` (config kaliti va DB jadvali) ishlatilmaydi | Chalkashlik |

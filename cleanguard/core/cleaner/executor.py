@@ -101,6 +101,7 @@ class CleanupExecutor:
                 approved, err_code, reason = self.safety_engine.verify_cleanup_target(
                     path=item.path,
                     category=item.category,
+                    allowed_roots=item.allowed_roots,
                 )
                 if not approved:
                     logger.warning(f"Target {item.path} rejected at deletion safety gate: {reason}")

@@ -3,6 +3,7 @@ Unit tests for Large Files Finder and Safety Protection.
 """
 
 import os
+from unittest.mock import patch
 import pytest
 from cleanguard.core.scanner.large_files import LargeFileScanner, LargeFileItem
 
@@ -61,10 +62,19 @@ def test_delete_file_safety(tmp_path):
     assert len(items) == 1
     item = items[0]
 
-    # Deleting normal file should succeed
-    ok, msg = scanner.delete_file(item)
+    # Deleting normal file should succeed — via the Recycle Bin, never os.remove
+    recycled = []
+
+    def fake_recycle(path, warn_if_permanent=False):
+        recycled.append((path, warn_if_permanent))
+        os.remove(path)
+        return True
+
+    with patch("cleanguard.core.cleaner.user_data.move_to_recycle_bin", side_effect=fake_recycle):
+        ok, msg = scanner.delete_file(item)
     assert ok is True
     assert not normal_file.exists()
+    assert recycled == [(item.path, True)]
 
     # If file was protected, deletion must be blocked
     mock_protected_item = LargeFileItem(

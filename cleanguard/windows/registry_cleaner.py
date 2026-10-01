@@ -219,8 +219,11 @@ class SafeRegistryCleaner:
         backup_path = None
         if backup and issues:
             ok, b_path = self.create_backup(issues)
-            if ok:
-                backup_path = b_path
+            if not ok:
+                # Never modify the registry without a restorable backup.
+                logger.error("Registry cleanup aborted: backup could not be created (%s).", b_path)
+                return 0, len(issues), None
+            backup_path = b_path
 
         deleted = 0
         failed = 0

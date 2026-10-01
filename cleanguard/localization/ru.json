@@ -346,6 +346,23 @@
   "smart_care_title": "Оптимизация 1-Click Smart Care",
   "smart_care_running": "Оптимизация системы...",
   "smart_care_complete_title": "Оптимизация Smart Care завершена!",
-  "smart_care_summary": "Итоги оптимизации системы:\n• Очищено мусора: {junk_size}\n• Освобождено RAM: {ram_freed}\n• Исправлено ошибок реестра: {reg_count}\n• Кэш DNS: Очищен\n• Кэш обновлений: {update_size}\n\nВсего освобождено места на диске: {total_space}"
+  "smart_care_summary": "Итоги оптимизации системы:\n• Очищено мусора: {junk_size}\n• Освобождено RAM: {ram_freed}\n• Исправлено ошибок реестра: {reg_count}\n• Кэш DNS: Очищен\n• Кэш обновлений: {update_size}\n\nВсего освобождено места на диске: {total_space}",
+  "msg_duplicate_keep_one": "В {count} группах выбраны все копии. В каждой группе должна остаться хотя бы одна копия — эти группы пропущены.",
+  "smart_care_confirm_title": "1-Click Smart Care",
+  "smart_care_confirm_msg": "Smart Care выполнит:\n\n• Удаление БЕЗОПАСНЫХ временных файлов и кэша\n• Очистку устаревших записей реестра (с резервной копией)\n• Освобождение RAM и кэша DNS\n• Очистку кэша Windows Update (в режиме администратора)\n\nКорзина и личная история не затрагиваются. Продолжить?",
+  "smart_care_error_msg": "Ошибка Smart Care:\n{error}",
+  "smart_care_stage_junk": "1/4: Очистка системного мусора и кэша...",
+  "smart_care_stage_junk_count": "1/4: Очистка безопасных файлов: {count}...",
+  "smart_care_stage_junk_done": "1/4: Системный мусор очищен.",
+  "smart_care_stage_registry": "2/4: Проверка и резервное копирование реестра...",
+  "smart_care_stage_registry_done": "2/4: Ошибки реестра исправлены.",
+  "smart_care_stage_ram": "3/4: Освобождение RAM...",
+  "smart_care_stage_ram_done": "3/4: RAM освобождена.",
+  "smart_care_stage_dns": "4/4: Очистка кэша DNS...",
+  "smart_care_stage_done": "Готово! Система оптимизирована.",
+  "cleanup_error_msg": "Ошибка очистки:\n{error}",
+  "leftovers_review": "Проверьте",
+  "large_file_delete_confirm": "Переместить этот файл в Корзину?\n\n{name} ({size})\n{path}",
+  "large_file_delete_failed": "Не удалось удалить файл: {error}",
+  "large_file_deleted": "Файл перемещён в Корзину, освобождено {size}."
 }
-

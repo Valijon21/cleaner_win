@@ -313,6 +313,25 @@ class DashboardPage(QWidget):
         if self.smart_care_worker and self.smart_care_worker.isRunning():
             return
 
+        # The pipeline deletes files and edits the registry: make that explicit first.
+        reply = QMessageBox.question(
+            self,
+            tr("smart_care_confirm_title", "1-Click Smart Care"),
+            tr(
+                "smart_care_confirm_msg",
+                "Smart Care quyidagilarni bajaradi:\n\n"
+                "• Xavfsiz (SAFE) vaqtinchalik fayllar va keshni o'chiradi\n"
+                "• Reestrdagi eskirgan yozuvlarni zaxira nusxa bilan tozalaydi\n"
+                "• RAM va DNS keshini bo'shatadi\n"
+                "• Windows Update keshini tozalaydi (administrator rejimida)\n\n"
+                "Savat (Recycle Bin) va shaxsiy tarix tegilmaydi. Davom etilsinmi?",
+            ),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+
         self.btn_smart_care.setEnabled(False)
         self.btn_circular_scan.setEnabled(False)
         self.smart_care_progress_widget.setVisible(True)
@@ -322,7 +341,20 @@ class DashboardPage(QWidget):
         self.smart_care_worker = SmartCareWorker(self.db, parent=self)
         self.smart_care_worker.stage_changed.connect(self._on_smart_care_stage)
         self.smart_care_worker.finished.connect(self._on_smart_care_finished)
+        self.smart_care_worker.error.connect(self._on_smart_care_error)
         self.smart_care_worker.start()
+
+    def _on_smart_care_error(self, err_msg: str) -> None:
+        """Restore the UI after a pipeline failure instead of leaving it locked."""
+        self.btn_smart_care.setEnabled(True)
+        self.btn_circular_scan.setEnabled(True)
+        self.smart_care_progress_widget.setVisible(False)
+        self.refresh_stats()
+        QMessageBox.critical(
+            self,
+            tr("msg_error_title", "Xatolik"),
+            tr("smart_care_error_msg", "Smart Care jarayonida xatolik yuz berdi:\n{error}", error=err_msg),
+        )
 
     def _on_smart_care_stage(self, stage_text: str, percent: int = 0) -> None:
         self.lbl_smart_care_status.setText(stage_text)

@@ -13,6 +13,7 @@ from cleanguard.core.safety import SafetyEngine
 from cleanguard.core.scanner.base import CancellationToken, ProgressCallback
 from cleanguard.security.protected_paths import is_system_critical_path
 from cleanguard.utils.filesystem import safe_stat, normalize_path
+from cleanguard.windows.shell import is_reparse_point_or_junction
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("scanner.duplicate")
@@ -74,6 +75,7 @@ class DuplicateScanner:
             dirs[:] = [
                 d for d in dirs
                 if not is_system_critical_path(os.path.join(root, d))
+                and not is_reparse_point_or_junction(os.path.join(root, d))
                 and not d.startswith(".")
                 and d.lower() not in ("$recycle.bin", "system volume information", "windows")
             ]

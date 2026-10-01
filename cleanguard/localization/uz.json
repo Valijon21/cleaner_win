@@ -346,6 +346,23 @@
   "smart_care_title": "1-Click Smart Care tizim optimizatsiyasi",
   "smart_care_running": "Tizim optimallashtirilmoqda...",
   "smart_care_complete_title": "Smart Care optimizatsiyasi yakunlandi!",
-  "smart_care_summary": "Tizim optimizatsiyasi yakuniy hisoboti:\n• Chiqindi fayllar tozalandi: {junk_size}\n• Bo'shatilgan RAM: {ram_freed}\n• To'g'rilangan Registry xatolari: {reg_count} ta\n• DNS kesh: Tozalandi\n• Update keshi tozalandi: {update_size}\n\nJami bo'shatilgan disk hajmi: {total_space}"
+  "smart_care_summary": "Tizim optimizatsiyasi yakuniy hisoboti:\n• Chiqindi fayllar tozalandi: {junk_size}\n• Bo'shatilgan RAM: {ram_freed}\n• To'g'rilangan Registry xatolari: {reg_count} ta\n• DNS kesh: Tozalandi\n• Update keshi tozalandi: {update_size}\n\nJami bo'shatilgan disk hajmi: {total_space}",
+  "msg_duplicate_keep_one": "{count} ta guruhda barcha nusxalar belgilangan. Har bir guruhda kamida bitta nusxa saqlanishi shart — bu guruhlar o'tkazib yuborildi.",
+  "smart_care_confirm_title": "1-Click Smart Care",
+  "smart_care_confirm_msg": "Smart Care quyidagilarni bajaradi:\n\n• Xavfsiz (SAFE) vaqtinchalik fayllar va keshni o'chiradi\n• Reestrdagi eskirgan yozuvlarni zaxira nusxa bilan tozalaydi\n• RAM va DNS keshini bo'shatadi\n• Windows Update keshini tozalaydi (administrator rejimida)\n\nSavat (Recycle Bin) va shaxsiy tarix tegilmaydi. Davom etilsinmi?",
+  "smart_care_error_msg": "Smart Care jarayonida xatolik yuz berdi:\n{error}",
+  "smart_care_stage_junk": "1/4: Tizim axlatlari va keshni tozalash...",
+  "smart_care_stage_junk_count": "1/4: {count} ta xavfsiz fayl tozalanmoqda...",
+  "smart_care_stage_junk_done": "1/4: Tizim axlatlari tozalandi.",
+  "smart_care_stage_registry": "2/4: Reestr xatolarini tekshirish va zaxiralash...",
+  "smart_care_stage_registry_done": "2/4: Reestr xatoliklari tuzatildi.",
+  "smart_care_stage_ram": "3/4: RAM tezkor xotirasi bo'shatilmoqda...",
+  "smart_care_stage_ram_done": "3/4: RAM kesh bo'shatildi.",
+  "smart_care_stage_dns": "4/4: DNS tarmoq keshini yangilash...",
+  "smart_care_stage_done": "Bajarildi! Tizim to'liq optimallandi.",
+  "cleanup_error_msg": "Tozalash jarayonida xatolik yuz berdi:\n{error}",
+  "leftovers_review": "Ko'rib chiqing",
+  "large_file_delete_confirm": "Ushbu fayl Savatga (Recycle Bin) ko'chirilsinmi?\n\n{name} ({size})\n{path}",
+  "large_file_delete_failed": "Faylni o'chirib bo'lmadi: {error}",
+  "large_file_deleted": "Fayl Savatga ko'chirildi, {size} joy bo'shatildi."
 }
-

@@ -13,9 +13,34 @@ from cleanguard.utils.logging import get_logger
 
 logger = get_logger("cleanup_planner")
 
+# Categories never cleaned without the user reviewing them on the Results page.
+# Emptying the Recycle Bin destroys the user's own undo buffer, and wiping recent
+# document / Jump List history is a visible change to their workspace.
+UNATTENDED_EXCLUDED_CATEGORIES = frozenset({
+    CleanCategory.RECYCLE_BIN.value,
+    CleanCategory.PRIVACY_TRACES.value,
+})
+
 
 class CleanupPlanner:
     """Filters selected items and builds an actionable execution plan."""
+
+    @staticmethod
+    def select_unattended(items: List[ScanItem]) -> List[ScanItem]:
+        """
+        Items eligible for unattended cleanup (scheduled Auto-Care, 1-Click Smart Care):
+        strictly SAFE and outside UNATTENDED_EXCLUDED_CATEGORIES.
+        Returned items are marked selected so build_plan() accepts them.
+        """
+        chosen: List[ScanItem] = []
+        for item in items:
+            if item.risk_level != RiskLevel.SAFE:
+                continue
+            if item.category in UNATTENDED_EXCLUDED_CATEGORIES:
+                continue
+            item.selected = True
+            chosen.append(item)
+        return chosen
 
     @staticmethod
     def build_plan(

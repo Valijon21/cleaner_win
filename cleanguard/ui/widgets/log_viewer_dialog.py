@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QApplication,
     QFrame,
+    QMessageBox,
 )
 from PyQt5.QtGui import QFont, QTextCursor
 from PyQt5.QtCore import Qt, QTimer
@@ -27,6 +28,7 @@ from cleanguard.utils.logging import (
     clear_memory_logs,
     open_log_folder,
     get_log_file_paths,
+    get_logger,
 )
 from cleanguard.localization import tr
 
@@ -284,6 +286,7 @@ class LogViewerDialog(QDialog):
                     f.write(self.text_logs.toPlainText())
             except Exception as exc:
                 get_logger("ui").error(f"Failed to export logs: {exc}")
+                QMessageBox.critical(self, tr("msg_error_title", "Xatolik"), str(exc))
 
     def _on_clear_logs(self) -> None:
         clear_memory_logs()

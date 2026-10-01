@@ -4,13 +4,25 @@ Implements non-destructive Recycle Bin movement and safe file removal.
 """
 
 import os
+import re
 import time
-from typing import Tuple
+from typing import Optional, Tuple
 from cleanguard.core.contracts import CleanupStrategy, ErrorCode
 from cleanguard.windows.recycle_bin import move_to_recycle_bin, empty_recycle_bin
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("cleanup_strategy")
+
+# Only a drive-root Recycle Bin (e.g. "C:\$Recycle.Bin") may trigger SHEmptyRecycleBin.
+_RECYCLE_BIN_ROOT_RE = re.compile(r"^([A-Za-z]:)[\\/]\$Recycle\.Bin[\\/]?$", re.IGNORECASE)
+
+
+def recycle_bin_root_drive(path: str) -> Optional[str]:
+    """Return the drive letter ("C:") if path is exactly a drive's Recycle Bin root, else None."""
+    if not path:
+        return None
+    m = _RECYCLE_BIN_ROOT_RE.match(path)
+    return m.group(1).upper() if m else None
 
 
 def execute_deletion(
@@ -22,26 +34,29 @@ def execute_deletion(
     Execute deletion of a verified target using the specified strategy.
     Returns (success, error_code, error_message).
     """
-    if not os.path.exists(path) and not path.endswith("$Recycle.Bin"):
-        return True, ErrorCode.NONE, "File already removed or absent."
+    rb_drive = recycle_bin_root_drive(path)
 
     # Strategy 1: Empty Recycle Bin
-    if path.endswith("$Recycle.Bin"):
-        ok = empty_recycle_bin(drive_letter=drive_letter, show_confirmation=False)
+    if rb_drive:
+        ok = empty_recycle_bin(drive_letter=rb_drive, show_confirmation=False)
         if ok:
             return True, ErrorCode.NONE, "Recycle Bin emptied."
         return False, ErrorCode.IO_ERROR, "Failed to empty Recycle Bin via Shell."
 
+    if not os.path.exists(path):
+        return True, ErrorCode.NONE, "File already removed or absent."
+
     # Strategy 2: Move to Recycle Bin (Non-destructive, preferred)
     if strategy == CleanupStrategy.RECYCLE_BIN:
-        ok = move_to_recycle_bin(path)
-        if ok:
+        if move_to_recycle_bin(path):
             return True, ErrorCode.NONE, "Moved to Recycle Bin."
-        # If Shell operation failed (e.g. file too large for trash), fallback to SAFE_DELETE only if temp
-        logger.debug(f"Recycle bin move failed for {path}, falling back to safe delete.")
+        # Never silently escalate a recoverable delete into a permanent one:
+        # the user explicitly chose the reversible strategy.
+        logger.warning(f"Recycle bin move failed for {path}; item left in place.")
+        return False, ErrorCode.IO_ERROR, "Could not move item to Recycle Bin."
 
     # Strategy 3: Safe Direct File Deletion (for temporary / cache items)
-    if strategy in (CleanupStrategy.SAFE_DELETE, CleanupStrategy.PERMANENT_DELETE, CleanupStrategy.RECYCLE_BIN):
+    if strategy in (CleanupStrategy.SAFE_DELETE, CleanupStrategy.PERMANENT_DELETE):
         try:
             if os.path.isdir(path):
                 # Only remove directory if empty

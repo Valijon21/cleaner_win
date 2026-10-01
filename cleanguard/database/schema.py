@@ -2,7 +2,7 @@
 Database Schema and Table Definitions for CleanGuard.
 """
 
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
 CREATE_TABLES_SQL = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -61,4 +61,9 @@ CREATE TABLE IF NOT EXISTS ignored_paths (
     reason TEXT,
     created_at REAL NOT NULL
 );
+
+-- v2: History page queries sort sessions by time and load items per session.
+CREATE INDEX IF NOT EXISTS idx_cleanup_items_cleanup_id ON cleanup_items(cleanup_id);
+CREATE INDEX IF NOT EXISTS idx_cleanup_sessions_started_at ON cleanup_sessions(started_at);
+CREATE INDEX IF NOT EXISTS idx_scan_sessions_started_at ON scan_sessions(started_at);
 """

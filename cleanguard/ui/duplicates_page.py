@@ -20,8 +20,10 @@ from PyQt5.QtWidgets import (
     QHeaderView,
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from cleanguard.core.scanner.base import CancellationToken
 from cleanguard.core.scanner.duplicate_scanner import DuplicateScanner, DuplicateGroup
 from cleanguard.core.safety import SafetyEngine
+from cleanguard.core.cleaner.user_data import recycle_user_items
 from cleanguard.windows.drives import enumerate_drives
 from cleanguard.utils.formatting import format_bytes
 from cleanguard.localization import tr
@@ -40,7 +42,7 @@ class DuplicateScanWorker(QThread):
         self.target_dir = target_dir
         self.min_size_bytes = min_size_bytes
         self.scanner = DuplicateScanner()
-        self._cancelled = False
+        self.cancel_token = CancellationToken()
 
     def run(self):
         def on_prog(count, path, _):
@@ -49,12 +51,13 @@ class DuplicateScanWorker(QThread):
         groups = self.scanner.scan_directory(
             self.target_dir,
             min_size_bytes=self.min_size_bytes,
+            cancel_token=self.cancel_token,
             progress_callback=on_prog,
         )
         self.finished.emit(groups)
 
     def cancel(self):
-        self._cancelled = True
+        self.cancel_token.cancel()
 
 
 class DuplicatesPage(QWidget):
@@ -264,15 +267,34 @@ class DuplicatesPage(QWidget):
 
     def _on_clean_duplicates(self) -> None:
         selected_to_delete = []
+        groups_fully_selected = 0
         root = self.tree.invisibleRootItem()
         for i in range(root.childCount()):
             grp_item = root.child(i)
+            group_selected = []
             for j in range(grp_item.childCount()):
                 child = grp_item.child(j)
                 if child.checkState(0) == Qt.Checked:
                     it = child.data(0, Qt.UserRole)
                     if it:
-                        selected_to_delete.append(it)
+                        group_selected.append(it)
+            if group_selected and len(group_selected) >= grp_item.childCount():
+                # Every copy is ticked: deleting them all would destroy the data
+                # itself, not just a duplicate. Always keep one copy.
+                groups_fully_selected += 1
+                continue
+            selected_to_delete.extend(group_selected)
+
+        if groups_fully_selected:
+            QMessageBox.warning(
+                self,
+                tr("msg_warning_title", "Ogohlantirish"),
+                tr(
+                    "msg_duplicate_keep_one",
+                    "{count} ta guruhda barcha nusxalar belgilangan. Har bir guruhda kamida bitta nusxa saqlanishi shart — bu guruhlar o'tkazib yuborildi.",
+                    count=groups_fully_selected,
+                ),
+            )
 
         if not selected_to_delete:
             QMessageBox.information(self, tr("msg_info_title", "Ma'lumot"), tr("msg_duplicate_no_selection", "O'chirish uchun birorta ham dublikat tanlanmagan."))
@@ -287,19 +309,15 @@ class DuplicatesPage(QWidget):
             QMessageBox.No,
         )
         if reply == QMessageBox.Yes:
-            deleted_count = 0
-            for it in selected_to_delete:
-                try:
-                    # Pass through SafetyEngine path guard first
-                    if self.safety_engine.is_protected_path(it.path):
-                        continue
-                    if os.path.exists(it.path):
-                        os.remove(it.path)
-                        deleted_count += 1
-                except Exception as ex:
-                    logger.error("Failed removing duplicate %s: %s", it.path, ex)
+            # Safety-gated and recoverable: duplicates go to the Recycle Bin.
+            result = recycle_user_items(
+                ((it.path, it.size) for it in selected_to_delete),
+                safety_engine=self.safety_engine,
+            )
+            for path, reason in result.rejected + result.failed:
+                logger.warning("Duplicate not removed %s: %s", path, reason)
 
-            QMessageBox.information(self, tr("msg_success_title", "Muvaffaqiyatli"), tr("msg_duplicate_clean_success", count=deleted_count))
+            QMessageBox.information(self, tr("msg_success_title", "Muvaffaqiyatli"), tr("msg_duplicate_clean_success", count=len(result.removed)))
             self._on_start_scan()
 
     def retranslate_ui(self, lang_code: str = "") -> None:

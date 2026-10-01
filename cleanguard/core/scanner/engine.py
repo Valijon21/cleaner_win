@@ -29,10 +29,16 @@ class ScannerEngine:
     def __init__(
         self,
         safety_engine: Optional[SafetyEngine] = None,
-        max_threads: int = 4,
+        max_threads: Optional[int] = None,
     ):
         self.safety_engine = safety_engine or SafetyEngine()
-        self.max_threads = max_threads
+        if max_threads is None:
+            from cleanguard.core.config import ConfigManager
+            try:
+                max_threads = int(ConfigManager().get("scan_threads", 4))
+            except (TypeError, ValueError):
+                max_threads = 4
+        self.max_threads = max(1, min(int(max_threads), 16))
         self.scanners: List[BaseScanner] = [
             TempScanner(self.safety_engine),
             CacheScanner(self.safety_engine),
@@ -115,11 +121,13 @@ class ScannerEngine:
                         if norm not in all_items:
                             all_items[norm] = item
                             total_files += 1
-                            total_bytes += item.size
-
                             cat = item.category
                             items_by_cat[cat] = items_by_cat.get(cat, 0) + 1
-                            bytes_by_cat[cat] = bytes_by_cat.get(cat, 0) + item.size
+                            # BLOCKED items can never be cleaned, so they must not
+                            # inflate the "reclaimable" figure shown to the user.
+                            if item.risk_level != RiskLevel.BLOCKED:
+                                total_bytes += item.size
+                                bytes_by_cat[cat] = bytes_by_cat.get(cat, 0) + item.size
                         c_files += 1
                         c_bytes += item.size
                 except Exception as exc:

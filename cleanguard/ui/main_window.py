@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QSystemTrayIcon,
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from cleanguard.app.version import APP_NAME, APP_VERSION
 from cleanguard.ui.theme import DARK_STYLESHEET, get_theme_stylesheet
 from cleanguard.ui.dashboard_page import DashboardPage
@@ -46,7 +46,6 @@ from cleanguard.core.safety import SafetyEngine
 from cleanguard.core.config import ConfigManager
 from cleanguard.database.db import DatabaseManager
 from cleanguard.windows.privileges import is_user_admin, request_elevation
-from cleanguard.windows.restore_point import create_restore_point
 from cleanguard.localization import tr, get_localization
 from cleanguard.utils.formatting import format_bytes
 from cleanguard.utils.logging import get_logger
@@ -65,6 +64,7 @@ class MainWindow(QMainWindow):
         self.safety_engine = SafetyEngine()
         self.scan_worker = ScanWorker(db_manager=self.db, parent=self)
         self.cleanup_worker = None
+        self._last_scan_id: Optional[str] = None
         self._force_quit = False
 
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION}")
@@ -76,6 +76,11 @@ class MainWindow(QMainWindow):
 
         self._init_shell()
         self._init_tray_and_monitor(enable_monitor=enable_monitor)
+
+        # Honour the "scan on startup" setting once the event loop is running
+        # (headless/test windows run with enable_monitor=False and skip it).
+        if enable_monitor and self.config.get("auto_scan_on_startup", False):
+            QTimer.singleShot(800, self._on_dashboard_start_scan)
 
     def _init_shell(self) -> None:
         central = QWidget()
@@ -469,40 +474,56 @@ class MainWindow(QMainWindow):
         self.page_scan.start_scan([category_id])
 
     def _on_scan_completed(self, summary: ScanSummary, items: list) -> None:
+        self._last_scan_id = summary.scan_id
         logger.info(f"Scan finished successfully: {len(items)} items ({summary.bytes_reclaimable} bytes).")
         self.page_results.load_results(summary, items)
         self.navigate_to(2)
 
     def _on_cleanup_requested(self, selected_items: List[ScanItem]) -> None:
+        if self.cleanup_worker is not None and self.cleanup_worker.isRunning():
+            logger.warning("Cleanup requested while another cleanup is running; ignored.")
+            return
+
         tot_bytes = sum(it.size for it in selected_items)
         logger.info(f"Cleanup requested for {len(selected_items)} items ({format_bytes(tot_bytes)})")
-        reply = QMessageBox.question(
-            self,
-            tr("confirm_cleanup_title"),
-            tr("confirm_cleanup_msg", items_count=len(selected_items), size_str=format_bytes(tot_bytes)),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes,
-        )
-        if reply == QMessageBox.Yes:
-            logger.info("User confirmed cleanup execution.")
-            if self.config.get("create_restore_point", True):
-                try:
-                    create_restore_point("CleanGuard Pre-Clean Snapshot")
-                except Exception as ex:
-                    logger.debug("Restore point creation skipped/failed: %s", ex)
-
-            self.navigate_to(3)
-            self.page_cleanup.reset_state()
-
-            self.cleanup_worker = CleanupWorker(
-                items_to_clean=selected_items,
-                safety_engine=self.safety_engine,
-                db_manager=self.db,
-                parent=self,
+        if self.config.get("confirm_before_cleanup", True):
+            reply = QMessageBox.question(
+                self,
+                tr("confirm_cleanup_title"),
+                tr("confirm_cleanup_msg", items_count=len(selected_items), size_str=format_bytes(tot_bytes)),
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
             )
-            self.cleanup_worker.progress.connect(self.page_cleanup.update_progress)
-            self.cleanup_worker.finished.connect(self._on_cleanup_finished)
-            self.cleanup_worker.start()
+            if reply != QMessageBox.Yes:
+                return
+        logger.info("User confirmed cleanup execution.")
+
+        self.navigate_to(3)
+        self.page_cleanup.reset_state()
+
+        self.cleanup_worker = CleanupWorker(
+            items_to_clean=selected_items,
+            scan_id=self._last_scan_id,
+            safety_engine=self.safety_engine,
+            db_manager=self.db,
+            create_restore_point=bool(self.config.get("create_restore_point", True)),
+            parent=self,
+        )
+        self.cleanup_worker.progress.connect(self.page_cleanup.update_progress)
+        self.cleanup_worker.finished.connect(self._on_cleanup_finished)
+        self.cleanup_worker.error.connect(self._on_cleanup_error)
+        self.cleanup_worker.start()
+
+    def _on_cleanup_error(self, err_msg: str) -> None:
+        """Without this handler a worker failure left the Cleanup page spinning forever."""
+        logger.error(f"Cleanup failed: {err_msg}")
+        QMessageBox.critical(
+            self,
+            tr("msg_error_title", "Xatolik"),
+            tr("cleanup_error_msg", "Tozalash jarayonida xatolik yuz berdi:\n{error}", error=err_msg),
+        )
+        self.page_history.reload_history()
+        self.navigate_to(2)
 
     def _on_cleanup_cancel(self) -> None:
         if self.cleanup_worker and self.cleanup_worker.isRunning():

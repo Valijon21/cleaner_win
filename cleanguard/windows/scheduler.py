@@ -3,7 +3,6 @@ Scheduled Auto-Care Engine: Integrates with Windows Task Scheduler (schtasks.exe
 and provides headless automated safe maintenance.
 """
 
-import os
 import sys
 import subprocess
 from typing import Tuple, Optional
@@ -15,6 +14,7 @@ from cleanguard.core.safety import SafetyEngine
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
 from cleanguard.utils.logging import get_logger
+from cleanguard.localization import tr
 
 logger = get_logger("windows.scheduler")
 
@@ -40,7 +40,7 @@ class AutoCareScheduler:
         Returns (is_present, info_string).
         """
         if sys.platform != "win32":
-            return False, "Not supported on non-Windows platform."
+            return False, tr("not_supported_platform", "Bu platformada qo'llab-quvvatlanmaydi.")
 
         cmd = ["schtasks", "/Query", "/TN", TASK_NAME, "/FO", "LIST"]
         try:
@@ -54,7 +54,7 @@ class AutoCareScheduler:
             if proc.returncode == 0:
                 # Find Next Run Time or Status
                 lines = proc.stdout.splitlines()
-                info = "Faol"
+                info = tr("sched_active", "Faol")
                 for line in lines:
                     if "Next Run Time:" in line:
                         info = line.split(":", 1)[1].strip()
@@ -80,7 +80,7 @@ class AutoCareScheduler:
             time_str: 'HH:MM' 24-hour format
         """
         if sys.platform != "win32":
-            return False, "Windows Task Scheduler faqat Windows tizimlarida ishlaydi."
+            return False, tr("sched_only_windows", "Windows Task Scheduler faqat Windows tizimlarida ishlaydi.")
 
         tr_cmd = cls.get_task_command()
         cmd = [
@@ -109,13 +109,13 @@ class AutoCareScheduler:
             )
             if proc.returncode == 0:
                 logger.info("AutoCare scheduled successfully: %s %s %s", frequency, day, time_str)
-                return True, f"Avtomatik tozalash muvaffaqiyatli rejalashtirildi ({frequency} {time_str})."
+                return True, tr("sched_enabled", "Avtomatik tozalash muvaffaqiyatli rejalashtirildi ({freq} {time}).", freq=frequency, time=time_str)
             else:
                 err = proc.stderr.strip() or proc.stdout.strip()
                 logger.warning("Failed creating schtask: %s", err)
                 if "access is denied" in err.lower():
-                    return False, "Vazifani rejalashtirish uchun Administrator huquqi talab qilinadi."
-                return False, f"Rejalashtirishda xatolik: {err}"
+                    return False, tr("sched_admin", "Vazifani rejalashtirish uchun Administrator huquqi talab qilinadi.")
+                return False, tr("sched_error", "Rejalashtirishda xatolik: {error}", error=err)
         except Exception as ex:
             logger.error("Exception enabling schedule: %s", ex)
             return False, str(ex)
@@ -124,7 +124,7 @@ class AutoCareScheduler:
     def disable_schedule(cls) -> Tuple[bool, str]:
         """Delete CleanGuardAutoCare task from Windows Task Scheduler."""
         if sys.platform != "win32":
-            return False, "Not supported on non-Windows platform."
+            return False, tr("not_supported_platform", "Bu platformada qo'llab-quvvatlanmaydi.")
 
         cmd = ["schtasks", "/Delete", "/TN", TASK_NAME, "/F"]
         try:
@@ -137,12 +137,12 @@ class AutoCareScheduler:
             )
             if proc.returncode == 0:
                 logger.info("CleanGuardAutoCare schedule deleted.")
-                return True, "Rejalashtirilgan tozalash bekor qilindi."
+                return True, tr("sched_disabled", "Rejalashtirilgan tozalash bekor qilindi.")
             else:
                 err = proc.stderr.strip() or proc.stdout.strip()
                 if "cannot find" in err.lower():
-                    return True, "Vazifa avvaldan mavjud emas."
-                return False, f"O'chirishda xatolik: {err}"
+                    return True, tr("sched_not_found", "Vazifa avvaldan mavjud emas.")
+                return False, tr("delete_error", "O'chirishda xatolik: {error}", error=err)
         except Exception as ex:
             return False, str(ex)
 

@@ -1,0 +1,6 @@
+# Static checks enforced in CI (.github/workflows/build-and-test.yml).
+# Pyflakes (F) catches undefined names and dead imports; E9 catches syntax errors.
+target-version = "py38"
+line-length = 140
+select = ["F", "E9"]
+exclude = ["build", "dist", ".venv"]

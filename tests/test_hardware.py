@@ -2,8 +2,7 @@
 Tests for Windows Hardware and System Performance Engine.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from cleanguard.windows.hardware import HardwareEngine
 
 

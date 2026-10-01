@@ -89,7 +89,7 @@ class TurboPage(QWidget):
         ram_layout.setSpacing(14)
 
         card_top = QHBoxLayout()
-        self.lbl_ram_title = QLabel("💻 OPERATIV XOTIRA (RAM) HOLATI")
+        self.lbl_ram_title = QLabel("💻 " + tr("turbo_ram_title", "OPERATIV XOTIRA (RAM) HOLATI"))
         self.lbl_ram_title.setStyleSheet("font-size: 13px; font-weight: 700; color: #9CA3AF; letter-spacing: 0.5px;")
         self.lbl_ram_pct = QLabel("0%")
         self.lbl_ram_pct.setStyleSheet("font-size: 28px; font-weight: 800; color: #10B981;")
@@ -119,11 +119,11 @@ class TurboPage(QWidget):
 
         # RAM details row
         details_row = QHBoxLayout()
-        self.lbl_used_ram = QLabel("Band: --")
+        self.lbl_used_ram = QLabel(tr("turbo_used", "Band: {val}", val="--"))
         self.lbl_used_ram.setStyleSheet("color: #E5E7EB; font-size: 13px; font-weight: 600;")
-        self.lbl_free_ram = QLabel("Bo'sh: --")
+        self.lbl_free_ram = QLabel(tr("turbo_free", "Bo'sh: {val}", val="--"))
         self.lbl_free_ram.setStyleSheet("color: #10B981; font-size: 13px; font-weight: 600;")
-        self.lbl_total_ram = QLabel("Jami: --")
+        self.lbl_total_ram = QLabel(tr("turbo_total", "Jami: {val}", val="--"))
         self.lbl_total_ram.setStyleSheet("color: #9CA3AF; font-size: 13px;")
 
         details_row.addWidget(self.lbl_used_ram)
@@ -147,16 +147,16 @@ class TurboPage(QWidget):
             }
         """)
         mode_layout = QVBoxLayout(mode_card)
-        self.lbl_mode_title = QLabel("⚙️ OPTIMALLASHTIRISH REJIMI")
+        self.lbl_mode_title = QLabel("⚙️ " + tr("turbo_mode_title", "OPTIMALLASHTIRISH REJIMI"))
         self.lbl_mode_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #9CA3AF;")
         mode_layout.addWidget(self.lbl_mode_title)
 
         modes_row = QHBoxLayout()
-        self.radio_work = QRadioButton("💼 Ish rejimi (Work Mode) — Ofis va dasturlash uchun barqaror tezlashtirish")
+        self.radio_work = QRadioButton(tr("turbo_mode_work", "💼 Ish rejimi (Work Mode) — Ofis va dasturlash uchun barqaror tezlashtirish"))
         self.radio_work.setChecked(True)
         self.radio_work.setStyleSheet("color: #F9FAFB; font-size: 13px;")
 
-        self.radio_game = QRadioButton("🎮 O'yin rejimi (Game Mode) — Maksimal erkin RAM va fonni to'xtatish")
+        self.radio_game = QRadioButton(tr("turbo_mode_game", "🎮 O'yin rejimi (Game Mode) — Maksimal erkin RAM va fonni to'xtatish"))
         self.radio_game.setStyleSheet("color: #F9FAFB; font-size: 13px;")
 
         self.mode_group = QButtonGroup(self)
@@ -173,7 +173,7 @@ class TurboPage(QWidget):
         action_layout = QVBoxLayout()
         action_layout.setSpacing(10)
 
-        self.btn_flush = QPushButton("⚡ TEZLASHTIRISH VA RAMNI BO'SHATISH")
+        self.btn_flush = QPushButton(tr("btn_turbo_flush", "⚡ TEZLASHTIRISH VA RAMNI BO'SHATISH"))
         self.btn_flush.setCursor(Qt.PointingHandCursor)
         self.btn_flush.setFixedHeight(48)
         self.btn_flush.setStyleSheet("""

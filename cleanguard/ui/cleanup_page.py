@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QFrame,
 )
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from cleanguard.core.contracts import CleanupSummary
 from cleanguard.localization import tr
 from cleanguard.utils.formatting import format_bytes, format_number

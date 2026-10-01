@@ -3,7 +3,6 @@ Path Guard and Boundary Enforcement Engine.
 Provides canonicalization, traversal prevention, and boundary containment checks.
 """
 
-import os
 from typing import List, Tuple, Optional
 from cleanguard.utils.filesystem import normalize_path, is_path_under_directory
 from cleanguard.windows.shell import is_reparse_point_or_junction

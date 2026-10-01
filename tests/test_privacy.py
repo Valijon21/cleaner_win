@@ -2,7 +2,7 @@
 Unit tests for Privacy Scanner.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from cleanguard.core.scanner.privacy_scanner import PrivacyScanner
 from cleanguard.core.contracts import CleanCategory, RiskLevel
 

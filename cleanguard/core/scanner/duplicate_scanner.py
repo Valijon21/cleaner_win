@@ -7,7 +7,7 @@ strictly adhering to CleanGuard Safety Rules and avoiding protected system direc
 import os
 import hashlib
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Callable, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 from cleanguard.core.contracts import ScanItem, CleanCategory, RiskLevel
 from cleanguard.core.safety import SafetyEngine
 from cleanguard.core.scanner.base import CancellationToken, ProgressCallback

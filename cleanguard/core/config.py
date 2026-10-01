@@ -20,7 +20,6 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "pyinstaller_min_age_hours": 24,  # Threshold for orphaned PyInstaller caches
     "scan_threads": 4,
     "custom_protected_paths": [],
-    "ignored_paths": [],
     "enabled_categories": [
         "temp_files",
         "app_cache",

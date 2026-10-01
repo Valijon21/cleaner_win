@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QTimer, QThread
 from cleanguard.app.version import APP_NAME, APP_VERSION
-from cleanguard.ui.theme import DARK_STYLESHEET, get_theme_stylesheet
+from cleanguard.ui.theme import get_theme_stylesheet
 from cleanguard.ui.dashboard_page import DashboardPage
 from cleanguard.ui.scan_page import ScanPage
 from cleanguard.ui.results_page import ResultsPage
@@ -336,6 +336,9 @@ class MainWindow(QMainWindow):
         dism = getattr(self.page_tweaks, "_dism_worker", None)
         if dism is not None and dism.isRunning():
             return "DISM"
+        autocare = getattr(self.page_settings, "_autocare_test_worker", None)
+        if autocare is not None and autocare.isRunning():
+            return "Auto-Care"
         return None
 
     def _confirm_can_quit(self) -> bool:

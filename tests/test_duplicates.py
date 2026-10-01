@@ -2,8 +2,7 @@
 Unit tests for Duplicate Files Scanner.
 """
 
-import os
-from cleanguard.core.scanner.duplicate_scanner import DuplicateScanner, DuplicateGroup
+from cleanguard.core.scanner.duplicate_scanner import DuplicateScanner
 
 
 def test_duplicate_scanner_detects_duplicates(tmp_path):

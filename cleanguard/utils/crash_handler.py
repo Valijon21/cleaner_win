@@ -78,7 +78,7 @@ def handle_uncaught_exception(exc_type, exc_value, exc_tb) -> None:
 
     # If Qt GUI is running, display user-friendly alert
     try:
-        from PyQt5.QtWidgets import QApplication, QMessageBox, QPushButton
+        from PyQt5.QtWidgets import QApplication, QMessageBox
         app = QApplication.instance()
         if app:
             msg_box = QMessageBox()

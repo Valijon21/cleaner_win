@@ -2,7 +2,6 @@
 Tests for Windows Network and Internet Optimizer.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from cleanguard.windows.network import NetworkOptimizer
 

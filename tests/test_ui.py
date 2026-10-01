@@ -111,7 +111,7 @@ def test_main_window_instantiation(qapp, tmp_path):
 
 def test_results_page_table_loading(qapp):
     from cleanguard.ui.results_page import ResultsPage
-    from cleanguard.core.contracts import ScanSummary, ScanItem, RiskLevel
+    from cleanguard.core.contracts import ScanSummary, ScanItem, RiskLevel  # noqa: F401 (import smoke check)
     page = ResultsPage()
     summary = ScanSummary(items_found=2, bytes_reclaimable=2048, safe_items=1, review_items=1)
     items = [
@@ -175,13 +175,13 @@ def test_dashboard_and_settings_pages(qapp, tmp_path):
 
 def test_asc_care_center_and_pipeline(qapp, tmp_path):
     from cleanguard.ui.widgets.buttons import CircularScanButton
-    from cleanguard.ui.widgets.cards import CareModuleCard
+    from cleanguard.ui.widgets.cards import CareModuleCard  # noqa: F401 (import smoke check)
     from cleanguard.ui.dashboard_page import DashboardPage
-    from cleanguard.ui.scan_page import ScanPage, ModuleStageCard
+    from cleanguard.ui.scan_page import ScanPage, ModuleStageCard  # noqa: F401 (import smoke check)
     from cleanguard.ui.results_page import ResultsPage
     from cleanguard.services.scan_service import ScanWorker
     from cleanguard.database.db import DatabaseManager
-    from cleanguard.core.contracts import ScanSummary, ScanItem, RiskLevel
+    from cleanguard.core.contracts import ScanSummary, ScanItem, RiskLevel  # noqa: F401 (import smoke check)
 
     # 1. CircularScanButton
     btn = CircularScanButton()

@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QGridLayout,
     QMessageBox,
 )
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from cleanguard.core.config import ConfigManager
 from cleanguard.localization import get_localization, tr, SUPPORTED_LANGUAGES
 from cleanguard.security.protected_paths import ProtectedPathRegistry
@@ -53,6 +53,7 @@ class SettingsPage(QWidget):
         self.loc = get_localization()
         self.path_registry = ProtectedPathRegistry(self.config)
         self.category_checkboxes: Dict[str, QCheckBox] = {}
+        self._autocare_test_worker: Optional["AutoCareTestWorker"] = None
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -332,7 +333,7 @@ class SettingsPage(QWidget):
         auto_layout.addLayout(sched_row)
 
         action_row = QHBoxLayout()
-        self.lbl_autocare_status = QLabel("Holat: Tekshirilmoqda...")
+        self.lbl_autocare_status = QLabel(tr("status_checking", "Holat: Tekshirilmoqda..."))
         self.lbl_autocare_status.setStyleSheet("color: #9CA3AF; font-size: 12px;")
         action_row.addWidget(self.lbl_autocare_status)
         action_row.addStretch()
@@ -507,7 +508,7 @@ class SettingsPage(QWidget):
         self.chk_autocare.setChecked(is_sched)
         self.chk_autocare.blockSignals(False)
         if is_sched:
-            self.lbl_autocare_status.setText(tr("autocare_status_active", f"Holat: Faol ({info})", info=info))
+            self.lbl_autocare_status.setText(tr("autocare_status_active", "Holat: Faol ({info})", info=info))
             self.lbl_autocare_status.setStyleSheet("color: #10B981; font-size: 12px; font-weight: 600;")
         else:
             self.lbl_autocare_status.setText(tr("autocare_status_disabled", "Holat: O'chiq"))
@@ -534,13 +535,62 @@ class SettingsPage(QWidget):
             self._on_autocare_toggled(True)
 
     def _on_test_autocare_clicked(self) -> None:
+        if self._autocare_test_worker is not None and self._autocare_test_worker.isRunning():
+            return
+        # The "test" performs a real unattended cleanup, so ask first.
+        reply = QMessageBox.question(
+            self,
+            tr("msg_confirm_title", "Tasdiqlash"),
+            tr(
+                "autocare_test_confirm",
+                "Sinov hozir haqiqiy avtomatik tozalashni bajaradi: xavfsiz (SAFE) vaqtinchalik fayllar o'chiriladi "
+                "(Savat va shaxsiy tarixga tegilmaydi). Davom etilsinmi?",
+            ),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        # Scanning and deleting take seconds to minutes: keep the GUI thread free.
+        self.btn_test_autocare.setEnabled(False)
+        self.btn_test_autocare.setText(tr("autocare_test_running", "⏳ Sinov bajarilmoqda..."))
+        self._autocare_test_worker = AutoCareTestWorker(self)
+        self._autocare_test_worker.done.connect(self._on_autocare_test_done)
+        self._autocare_test_worker.failed.connect(self._on_autocare_test_failed)
+        self._autocare_test_worker.start()
+
+    def _reset_autocare_test_button(self) -> None:
+        self.btn_test_autocare.setEnabled(True)
+        self.btn_test_autocare.setText("⚡ " + tr("btn_test_clean", "Hozir sinab ko'rish"))
+
+    def _on_autocare_test_done(self, files: int, recovered: int) -> None:
+        self._reset_autocare_test_button()
+        QMessageBox.information(
+            self,
+            tr("msg_info_title", "Auto-Care sinovi"),
+            tr(
+                "msg_autocare_test_success",
+                "Sinov muvaffaqiyatli yakunlandi!\nO'chirilgan fayllar: {files} ta\nBo'shatilgan joy: {recovered}",
+                files=files,
+                recovered=format_bytes(recovered),
+            ),
+        )
+
+    def _on_autocare_test_failed(self, error: str) -> None:
+        self._reset_autocare_test_button()
+        QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), f"{tr('msg_error_title', 'Xatolik')}: {error}")
+
+
+class AutoCareTestWorker(QThread):
+    """Runs AutoCareScheduler.run_auto_clean_now() off the GUI thread."""
+    done = pyqtSignal(int, int)  # (files_removed, bytes_recovered)
+    failed = pyqtSignal(str)
+
+    def run(self) -> None:
         try:
             files, recovered = AutoCareScheduler.run_auto_clean_now()
-            QMessageBox.information(
-                self,
-                tr("msg_info_title", "Auto-Care sinovi"),
-                tr("msg_autocare_test_success", f"Sinov muvaffaqiyatli yakunlandi!\nO'chirilgan fayllar: {files} ta\nBo'shatilgan joy: {format_bytes(recovered)}", files=files, recovered=format_bytes(recovered)),
-            )
+            self.done.emit(int(files), int(recovered))
         except Exception as ex:
-            QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), f"{tr('msg_error_title', 'Xatolik')}: {ex}")
+            self.failed.emit(str(ex))
 

@@ -2,7 +2,6 @@
 Tests for Scheduled Auto-Care and Windows Task Scheduler Integration.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from cleanguard.windows.scheduler import AutoCareScheduler, TASK_NAME
 from cleanguard.core.contracts import ScanItem, ScanSummary, RiskLevel, CleanupSummary

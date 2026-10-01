@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import List, Tuple, Optional, Dict, Any
 from cleanguard.windows.known_folders import get_known_folders
 from cleanguard.utils.logging import get_logger
+from cleanguard.localization import tr
 
 logger = get_logger("windows.registry_cleaner")
 
@@ -24,6 +25,65 @@ except ImportError:
 MUI_CACHE_KEY = r"Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache"
 RUN_MRU_KEY = r"Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU"
 TYPED_PATHS_KEY = r"Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths"
+
+
+def is_orphaned_local_path(path: str) -> bool:
+    """
+    True only if path points to a currently mounted local drive and the file is gone.
+    Programs on network shares or unplugged USB/secondary drives are merely
+    unreachable, not uninstalled, so their entries must not be reported.
+    """
+    if not path or path.startswith("\\\\"):
+        return False  # UNC / network path
+    drive, _ = os.path.splitdrive(path)
+    if not drive or not os.path.exists(drive + "\\"):
+        return False  # drive not mounted right now
+    return not os.path.exists(path)
+
+
+def _hex_bytes(data: bytes) -> str:
+    return ",".join(f"{b:02x}" for b in data)
+
+
+def _utf16z(text: str) -> bytes:
+    return (text + "\x00").encode("utf-16-le")
+
+
+def format_reg_value(name: str, data: Any, value_type: int) -> str:
+    """
+    Render one value as a line of a "Windows Registry Editor Version 5.00" file,
+    using the encoding regedit/`reg import` expects for each value type, so a
+    restore recreates the value with its original type (not a plain REG_SZ).
+    """
+    reg_sz = getattr(winreg, "REG_SZ", 1)
+    reg_expand_sz = getattr(winreg, "REG_EXPAND_SZ", 2)
+    reg_binary = getattr(winreg, "REG_BINARY", 3)
+    reg_dword = getattr(winreg, "REG_DWORD", 4)
+    reg_multi_sz = getattr(winreg, "REG_MULTI_SZ", 7)
+    reg_qword = getattr(winreg, "REG_QWORD", 11)
+
+    def esc(text: str) -> str:
+        return str(text).replace("\\", "\\\\").replace('"', '\\"')
+
+    key_part = "@" if name == "" else f'"{esc(name)}"'
+
+    if value_type == reg_sz:
+        return f'{key_part}="{esc(data)}"'
+    if value_type == reg_dword:
+        return f"{key_part}=dword:{int(data) & 0xFFFFFFFF:08x}"
+    if value_type == reg_qword:
+        return f"{key_part}=hex(b):{_hex_bytes((int(data) & 0xFFFFFFFFFFFFFFFF).to_bytes(8, 'little'))}"
+    if value_type == reg_expand_sz:
+        return f"{key_part}=hex(2):{_hex_bytes(_utf16z(str(data)))}"
+    if value_type == reg_multi_sz:
+        items = data if isinstance(data, (list, tuple)) else [str(data)]
+        raw = b"".join(_utf16z(str(s)) for s in items) + b"\x00\x00"
+        return f"{key_part}=hex(7):{_hex_bytes(raw)}"
+    if value_type == reg_binary:
+        return f"{key_part}=hex:{_hex_bytes(bytes(data or b''))}"
+    # Any other type: preserve raw bytes with the explicit type number.
+    raw = data if isinstance(data, (bytes, bytearray)) else _utf16z(str(data))
+    return f"{key_part}=hex({int(value_type):x}):{_hex_bytes(bytes(raw))}"
 
 
 @dataclass
@@ -73,7 +133,7 @@ class SafeRegistryCleaner:
                         if raw_path.startswith("C:\\") or raw_path.startswith("D:\\") or ":\\" in raw_path:
                             # Normalize path and check if file exists
                             clean_path = raw_path.strip('"').strip()
-                            if not os.path.exists(clean_path):
+                            if is_orphaned_local_path(clean_path):
                                 issues.append(
                                     RegistryIssue(
                                         id=f"mui_{i}",
@@ -84,7 +144,7 @@ class SafeRegistryCleaner:
                                         value_data=v_data,
                                         value_type=v_type,
                                         issue_type="MuiCache",
-                                        details=f"O'chirilgan ilovaning kesh yozuvi: {os.path.basename(clean_path)}",
+                                        details=tr("reg_mui_detail", "O'chirilgan ilovaning kesh yozuvi: {name}", name=os.path.basename(clean_path)),
                                         target_path=clean_path,
                                     )
                                 )
@@ -120,7 +180,7 @@ class SafeRegistryCleaner:
                                     value_data=v_data,
                                     value_type=v_type,
                                     issue_type="RunMRU",
-                                    details=f"Win+R ishga tushirish tarixi: {cmd_str}",
+                                    details=tr("reg_runmru_detail", "Win+R ishga tushirish tarixi: {cmd}", cmd=cmd_str),
                                 )
                             )
                     except OSError:
@@ -153,7 +213,7 @@ class SafeRegistryCleaner:
                                 value_data=v_data,
                                 value_type=v_type,
                                 issue_type="TypedPaths",
-                                details=f"Explorer manzil satri tarixi: {v_data}",
+                                details=tr("reg_typed_detail", "Explorer manzil satri tarixi: {path}", path=v_data),
                             )
                         )
                     except OSError:
@@ -188,18 +248,13 @@ class SafeRegistryCleaner:
                 key = (iss.hive_name, iss.sub_key)
                 grouped.setdefault(key, []).append(iss)
 
-            with open(backup_file, "w", encoding="utf-16", errors="replace") as f:
+            with open(backup_file, "w", encoding="utf-16", errors="replace", newline="") as f:
                 f.write("Windows Registry Editor Version 5.00\r\n\r\n")
                 for (h_name, s_key), items in grouped.items():
                     full_hive = "HKEY_CURRENT_USER" if h_name == "HKCU" else "HKEY_LOCAL_MACHINE"
                     f.write(f"[{full_hive}\\{s_key}]\r\n")
                     for it in items:
-                        val_escaped = it.value_name.replace("\\", "\\\\").replace('"', '\\"')
-                        if isinstance(it.value_data, int):
-                            f.write(f'"{val_escaped}"=dword:{it.value_data:08x}\r\n')
-                        else:
-                            data_escaped = str(it.value_data).replace("\\", "\\\\").replace('"', '\\"')
-                            f.write(f'"{val_escaped}"="{data_escaped}"\r\n')
+                        f.write(format_reg_value(it.value_name, it.value_data, it.value_type) + "\r\n")
                     f.write("\r\n")
 
             logger.info("Registry backup created at: %s", backup_file)
@@ -253,7 +308,7 @@ class SafeRegistryCleaner:
     def restore_backup(self, backup_path: str) -> Tuple[bool, str]:
         """Import a previously exported .reg file using reg import."""
         if not os.path.exists(backup_path):
-            return False, "Zaxira fayli topilmadi."
+            return False, tr("reg_backup_missing", "Zaxira fayli topilmadi.")
 
         cmd = ["reg", "import", backup_path]
         try:
@@ -266,10 +321,10 @@ class SafeRegistryCleaner:
             )
             if proc.returncode == 0:
                 logger.info("Successfully restored registry backup %s", backup_path)
-                return True, "Zaxira nusxasi muvaffaqiyatli tiklandi."
+                return True, tr("reg_restore_ok", "Zaxira nusxasi muvaffaqiyatli tiklandi.")
             else:
                 err = proc.stderr.strip() or proc.stdout.strip()
-                return False, f"Tiklashda xatolik: {err}"
+                return False, tr("reg_restore_error", "Tiklashda xatolik: {error}", error=err)
         except Exception as ex:
             return False, str(ex)
 

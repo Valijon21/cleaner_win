@@ -5,11 +5,9 @@ Verifies multi-layered safety (active process blocking, age threshold, lock chec
 
 import os
 import time
-import pytest
 from cleanguard.core.contracts import RiskLevel, CleanCategory
 from cleanguard.security.pyinstaller_tracker import PyInstallerTracker
 from cleanguard.security.risk_engine import RiskEngine
-from cleanguard.core.safety import SafetyEngine
 from cleanguard.core.cleaner.executor import CleanupExecutor
 from cleanguard.core.contracts import ScanItem, CleanupStrategy
 

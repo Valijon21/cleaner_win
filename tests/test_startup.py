@@ -2,7 +2,6 @@
 Unit tests for Windows Startup Items Manager.
 """
 
-import os
 from unittest.mock import patch, MagicMock
 from cleanguard.windows.startup import StartupManager, StartupItem
 from cleanguard.core.contracts import RiskLevel
@@ -54,7 +53,7 @@ def test_blocked_item_cannot_be_disabled():
     )
     success, msg = mgr.set_startup_state(item, False)
     assert success is False
-    assert "critical" in msg.lower()
+    assert "muhim" in msg  # localized: "Bu Windows tizimining muhim elementi..."
 
 
 def test_unquoted_executable_path_with_spaces():
@@ -68,7 +67,7 @@ def test_unquoted_executable_path_with_spaces():
 
 def test_approved_enabled_eval():
     mgr = StartupManager()
-    with patch("winreg.OpenKey") as mock_open:
+    with patch("winreg.OpenKey"):
         with patch("winreg.QueryValueEx") as mock_val:
             # Even first byte (0x02) = enabled
             mock_val.return_value = (b"\x02\x00\x00\x00", 3)

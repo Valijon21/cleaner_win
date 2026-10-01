@@ -7,9 +7,10 @@ and real-time latency diagnostics.
 import sys
 import subprocess
 import re
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict
 from cleanguard.windows.privileges import is_user_admin
 from cleanguard.utils.logging import get_logger
+from cleanguard.localization import tr
 
 logger = get_logger("windows.network")
 
@@ -28,7 +29,7 @@ class NetworkOptimizer:
     def flush_dns() -> Tuple[bool, str]:
         """Flush the Windows DNS resolver cache."""
         if sys.platform != "win32":
-            return False, "Faqat Windows tizimlarida ishlaydi."
+            return False, tr("only_windows", "Faqat Windows tizimlarida ishlaydi.")
 
         cmd = ["ipconfig", "/flushdns"]
         try:
@@ -41,10 +42,10 @@ class NetworkOptimizer:
             )
             if proc.returncode == 0:
                 logger.info("DNS resolver cache flushed successfully.")
-                return True, "DNS keshi muvaffaqiyatli tozalandi."
+                return True, tr("net_dns_flushed", "DNS keshi muvaffaqiyatli tozalandi.")
             else:
                 err = proc.stderr.strip() or proc.stdout.strip()
-                return False, f"DNS tozalashda xatolik: {err}"
+                return False, tr("net_dns_error", "DNS tozalashda xatolik: {error}", error=err)
         except Exception as ex:
             logger.error("Error flushing DNS: %s", ex)
             return False, str(ex)
@@ -58,10 +59,10 @@ class NetworkOptimizer:
         - heuristics=disabled (prevents random throttling)
         """
         if sys.platform != "win32":
-            return False, "Faqat Windows tizimlarida ishlaydi."
+            return False, tr("only_windows", "Faqat Windows tizimlarida ishlaydi.")
 
         if not is_user_admin():
-            return False, "TCP/IP sozlamalarini o'zgartirish uchun Administrator huquqi talab qilinadi."
+            return False, tr("net_tcp_admin", "TCP/IP sozlamalarini o'zgartirish uchun Administrator huquqi talab qilinadi.")
 
         commands = [
             ["netsh", "int", "tcp", "set", "global", "autotuninglevel=normal"],
@@ -86,9 +87,9 @@ class NetworkOptimizer:
 
         if not errors:
             logger.info("TCP/IP stack optimized successfully.")
-            return True, "TCP/IP stacki muvaffaqiyatli optimallashtirildi."
+            return True, tr("net_tcp_ok", "TCP/IP stacki muvaffaqiyatli optimallashtirildi.")
         else:
-            return False, f"TCP/IP xatosi: {'; '.join(errors)}"
+            return False, tr("net_tcp_error", "TCP/IP xatosi: {error}", error="; ".join(errors))
 
     @staticmethod
     def is_throttling_disabled() -> bool:
@@ -111,10 +112,10 @@ class NetworkOptimizer:
         Sets NetworkThrottlingIndex = 0xffffffff and SystemResponsiveness = 0 in HKLM Multimedia Profile.
         """
         if winreg is None or sys.platform != "win32":
-            return False, "Faqat Windows tizimlarida ishlaydi."
+            return False, tr("only_windows", "Faqat Windows tizimlarida ishlaydi.")
 
         if not is_user_admin():
-            return False, "Ushbu parametrni o'zgartirish uchun Administrator huquqi talab qilinadi."
+            return False, tr("admin_required_setting", "Ushbu parametrni o'zgartirish uchun Administrator huquqi talab qilinadi.")
 
         try:
             with winreg.CreateKeyEx(
@@ -126,9 +127,9 @@ class NetworkOptimizer:
                 winreg.SetValueEx(key, "NetworkThrottlingIndex", 0, winreg.REG_DWORD, 0xFFFFFFFF)
                 winreg.SetValueEx(key, "SystemResponsiveness", 0, winreg.REG_DWORD, 0)
             logger.info("Network throttling disabled and SystemResponsiveness set to 0.")
-            return True, "Tarmoq cheklovi (throttling) muvaffaqiyatli olib tashlandi."
+            return True, tr("net_throttle_ok", "Tarmoq cheklovi (throttling) muvaffaqiyatli olib tashlandi.")
         except PermissionError:
-            return False, "Ruxsat yetarli emas. CleanGuard ni Administrator sifatida ishga tushiring."
+            return False, tr("access_denied_run_admin", "Ruxsat yetarli emas. CleanGuard ni Administrator sifatida ishga tushiring.")
         except Exception as ex:
             logger.error("Error setting network throttling index: %s", ex)
             return False, str(ex)
@@ -154,8 +155,8 @@ class NetworkOptimizer:
                 if match:
                     latency = float(match.group(1))
                     return True, latency, f"Ping {host}: {latency:.0f} ms"
-                return True, 10.0, f"Ping {host}: muvaffaqiyatli"
-            return False, 999.0, f"{host} ga ulanib bo'lmadi (Timeout)."
+                return True, 10.0, tr("ping_ok", "Ping {host}: muvaffaqiyatli", host=host)
+            return False, 999.0, tr("ping_timeout", "{host} ga ulanib bo'lmadi (Timeout).", host=host)
         except Exception as ex:
             return False, 999.0, str(ex)
 
@@ -182,7 +183,7 @@ class NetworkOptimizer:
                         current_adapter = line.replace(":", "").strip()
                     elif "IPv4" in line_str and current_adapter:
                         ip = line_str.split(":")[-1].strip()
-                        adapters.append({"name": current_adapter, "ip": ip, "status": "Faol (Online)"})
+                        adapters.append({"name": current_adapter, "ip": ip, "status": tr("adapter_online", "Faol (Online)")})
                         current_adapter = None
         except Exception as ex:
             logger.debug("Error getting adapters: %s", ex)

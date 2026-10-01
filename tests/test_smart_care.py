@@ -2,7 +2,6 @@
 Unit tests for 1-Click Smart Care Pipeline (SmartCareWorker and SmartCareResult).
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from cleanguard.services.smart_care_service import SmartCareWorker, SmartCareResult
 from cleanguard.core.contracts import ScanItem, RiskLevel, CleanupSummary

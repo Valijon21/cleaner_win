@@ -2,7 +2,7 @@
 Startup Manager Page: Inspect and control Windows autorun applications to boost boot speed.
 """
 
-from typing import List, Optional
+from typing import List
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -76,9 +76,9 @@ class StartupPage(QWidget):
         stats_row = QHBoxLayout()
         stats_row.setSpacing(12)
 
-        self.card_total = self._create_stat_card("Jami dasturlar", "0", "#3B82F6")
-        self.card_enabled = self._create_stat_card("Faol yuklanuvchilar", "0", "#10B981")
-        self.card_high_impact = self._create_stat_card("Yuqori ta'sirli", "0", "#EF4444")
+        self.card_total = self._create_stat_card(tr("startup_card_total", "Jami dasturlar"), "0", "#3B82F6")
+        self.card_enabled = self._create_stat_card(tr("startup_card_enabled", "Faol yuklanuvchilar"), "0", "#10B981")
+        self.card_high_impact = self._create_stat_card(tr("startup_card_high", "Yuqori ta'sirli"), "0", "#EF4444")
 
         stats_row.addWidget(self.card_total)
         stats_row.addWidget(self.card_enabled)
@@ -102,7 +102,14 @@ class StartupPage(QWidget):
         # Items Table
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["Dastur", "Noshir", "Ta'siri", "Joylashuvi", "Holati", "Amal"])
+        self.table.setHorizontalHeaderLabels([
+            tr("col_program", "Dastur"),
+            tr("col_publisher", "Noshir"),
+            tr("col_impact", "Ta'siri"),
+            tr("col_location", "Joylashuvi"),
+            tr("col_status", "Holati"),
+            tr("col_action", "Amal"),
+        ])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -118,13 +125,13 @@ class StartupPage(QWidget):
     def _create_stat_card(self, title: str, value: str, accent_color: str) -> QFrame:
         card = QFrame()
         card.setStyleSheet(
-            f"""
-            QFrame {{
+            """
+            QFrame {
                 background-color: #1F2937;
                 border: 1px solid #374151;
                 border-radius: 8px;
                 padding: 12px;
-            }}
+            }
             """
         )
         c_layout = QVBoxLayout(card)
@@ -186,16 +193,16 @@ class StartupPage(QWidget):
 
     def _populate_table(self, items: List[StartupItem]) -> None:
         loc_display_map = {
-            "HKCU_RUN": "Reestr (HKCU)",
-            "HKLM_RUN": "Reestr (HKLM)",
-            "HKLM_WOW64_RUN": "Reestr (32-bit)",
-            "HKCU_WOW64_RUN": "Reestr (HKCU 32-bit)",
-            "USER_FOLDER": "Autostart Papkasi",
-            "COMMON_FOLDER": "Umumiy Papka",
-            "SCHEDULED_TASK": "Vazifalar Rejasi",
-            "HKCU_RUNONCE": "Reestr (RunOnce)",
-            "HKLM_RUNONCE": "Reestr (RunOnce HKLM)",
-            "POLICIES_RUN": "Guruh Siyosati (Policy)",
+            "HKCU_RUN": tr("loc_hkcu_run", "Reestr (HKCU)"),
+            "HKLM_RUN": tr("loc_hklm_run", "Reestr (HKLM)"),
+            "HKLM_WOW64_RUN": tr("loc_hklm_wow64", "Reestr (32-bit)"),
+            "HKCU_WOW64_RUN": tr("loc_hkcu_wow64", "Reestr (HKCU 32-bit)"),
+            "USER_FOLDER": tr("loc_user_folder", "Autostart papkasi"),
+            "COMMON_FOLDER": tr("loc_common_folder", "Umumiy papka"),
+            "SCHEDULED_TASK": tr("loc_scheduled_task", "Vazifalar rejasi"),
+            "HKCU_RUNONCE": tr("loc_hkcu_runonce", "Reestr (RunOnce)"),
+            "HKLM_RUNONCE": tr("loc_hklm_runonce", "Reestr (RunOnce HKLM)"),
+            "POLICIES_RUN": tr("loc_policies_run", "Guruh siyosati (Policy)"),
         }
 
         self.table.setUpdatesEnabled(False)
@@ -207,16 +214,17 @@ class StartupPage(QWidget):
                 item_name = QTableWidgetItem(f"  {it.name}")
                 item_name.setToolTip(f"{it.name}\n{it.command}")
                 if it.risk_level == RiskLevel.BLOCKED:
-                    item_name.setToolTip(f"{it.name}\nWindows tizim fayli — o'chirish taqiqlanadi\n{it.command}")
+                    blocked_tip = tr("startup_system_item_tip", "Windows tizim fayli — o'chirish taqiqlanadi")
+                    item_name.setToolTip(f"{it.name}\n{blocked_tip}\n{it.command}")
                 self.table.setItem(row, 0, item_name)
 
                 # Publisher
-                item_pub = QTableWidgetItem(it.publisher or "Noma'lum")
+                item_pub = QTableWidgetItem(it.publisher or tr("unknown_publisher", "Noma'lum"))
                 item_pub.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(row, 1, item_pub)
 
                 # Impact badge
-                item_impact = QTableWidgetItem(it.impact)
+                item_impact = QTableWidgetItem(tr(f"impact_{str(it.impact).lower()}", it.impact))
                 item_impact.setTextAlignment(Qt.AlignCenter)
                 if it.impact == "High":
                     item_impact.setForeground(Qt.red)
@@ -234,19 +242,19 @@ class StartupPage(QWidget):
                 self.table.setItem(row, 3, item_loc)
 
                 # Status
-                status_text = "🟢 Faol" if it.enabled else "⚪ O'chirilgan"
+                status_text = tr("status_enabled", "🟢 Faol") if it.enabled else tr("status_disabled", "⚪ O'chirilgan")
                 item_status = QTableWidgetItem(status_text)
                 item_status.setTextAlignment(Qt.AlignCenter)
                 self.table.setItem(row, 4, item_status)
 
                 # Action button
                 if it.risk_level == RiskLevel.BLOCKED:
-                    lbl_blocked = QLabel("🛡️ Himoyalangan")
+                    lbl_blocked = QLabel("🛡️ " + tr("lbl_protected", "Himoyalangan"))
                     lbl_blocked.setAlignment(Qt.AlignCenter)
                     lbl_blocked.setStyleSheet("color: #6B7280; font-size: 11px;")
                     self.table.setCellWidget(row, 5, lbl_blocked)
                 else:
-                    btn_toggle = QPushButton("O'chirish" if it.enabled else "Yoqish")
+                    btn_toggle = QPushButton(tr("btn_disable", "O'chirish") if it.enabled else tr("btn_enable", "Yoqish"))
                     btn_toggle.setCursor(Qt.PointingHandCursor)
                     if it.enabled:
                         btn_toggle.setStyleSheet("background-color: #EF4444; color: white; border-radius: 4px; padding: 4px;")

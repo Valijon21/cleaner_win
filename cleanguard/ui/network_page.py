@@ -2,7 +2,6 @@
 Network Page: Internet & Network Latency Booster UI.
 """
 
-from typing import List, Dict
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -95,7 +94,7 @@ class NetworkPage(QWidget):
         self.lbl_ping_val.setStyleSheet("font-size: 32px; font-weight: 800; color: #34D399;")
         ping_layout.addWidget(self.lbl_ping_val)
 
-        self.lbl_ping_target = QLabel("Server: Cloudflare Fast DNS (1.1.1.1)")
+        self.lbl_ping_target = QLabel(tr("net_ping_target", "Server: Cloudflare DNS (1.1.1.1)"))
         self.lbl_ping_target.setStyleSheet("font-size: 11px; color: #9CA3AF;")
         ping_layout.addWidget(self.lbl_ping_target)
 
@@ -115,7 +114,7 @@ class NetworkPage(QWidget):
         self.lbl_boost_title.setStyleSheet("font-size: 14px; font-weight: 600; color: #10B981;")
         boost_layout.addWidget(self.lbl_boost_title)
 
-        self.lbl_throttling_status = QLabel("Holat: Tekshirilmoqda...")
+        self.lbl_throttling_status = QLabel(tr("status_checking", "Holat: Tekshirilmoqda..."))
         self.lbl_throttling_status.setStyleSheet("font-size: 13px; color: #F9FAFB;")
         boost_layout.addWidget(self.lbl_throttling_status)
 
@@ -143,7 +142,11 @@ class NetworkPage(QWidget):
 
         self.table_adapters = QTableWidget()
         self.table_adapters.setColumnCount(3)
-        self.table_adapters.setHorizontalHeaderLabels(["Adapter nomi", "IPv4 manzili", "Holati"])
+        self.table_adapters.setHorizontalHeaderLabels([
+            tr("col_adapter_name", "Adapter nomi"),
+            tr("col_ipv4", "IPv4 manzili"),
+            tr("col_status", "Holati"),
+        ])
         self.table_adapters.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table_adapters.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table_adapters.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)

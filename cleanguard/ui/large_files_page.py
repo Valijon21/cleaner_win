@@ -23,7 +23,6 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 from cleanguard.core.scanner.large_files import LargeFileScanner, LargeFileItem
-from cleanguard.security.protected_paths import ProtectedPathRegistry
 from cleanguard.windows.drives import enumerate_drives
 from cleanguard.localization import tr
 from cleanguard.utils.formatting import format_bytes
@@ -70,14 +69,15 @@ class LargeFilesPage(QWidget):
         (5_368_709_120, "> 5 GB"),
     ]
 
+    # (category id, translation key, Uzbek default) — labels are resolved with tr() at display time
     CATEGORY_OPTIONS = [
-        ("ALL", "Barcha turlar (All)"),
-        ("VIDEOS", "🎬 Videolar (.mp4, .mkv, .avi)"),
-        ("ARCHIVES", "📦 Arxivlar va Disk obrazlari (.zip, .rar, .iso)"),
-        ("INSTALLERS", "💿 O'rnatuvchilar (.exe, .msi)"),
-        ("VIRTUAL_MACHINES", "🖥️ Virtual mashinalar (.vmdk, .vhd)"),
-        ("DATABASES_BACKUPS", "💾 Ma'lumotlar bazasi va zaxiralar (.bak, .sql)"),
-        ("OTHER", "Boshqa fayllar (Other)"),
+        ("ALL", "lf_cat_all", "Barcha turlar"),
+        ("VIDEOS", "lf_cat_videos", "🎬 Videolar (.mp4, .mkv, .avi)"),
+        ("ARCHIVES", "lf_cat_archives", "📦 Arxivlar va disk obrazlari (.zip, .rar, .iso)"),
+        ("INSTALLERS", "lf_cat_installers", "💿 O'rnatuvchilar (.exe, .msi)"),
+        ("VIRTUAL_MACHINES", "lf_cat_vms", "🖥️ Virtual mashinalar (.vmdk, .vhd)"),
+        ("DATABASES_BACKUPS", "lf_cat_db", "💾 Ma'lumotlar bazasi va zaxiralar (.bak, .sql)"),
+        ("OTHER", "lf_cat_other", "Boshqa fayllar"),
     ]
 
     def __init__(self, parent=None):
@@ -143,7 +143,8 @@ class LargeFilesPage(QWidget):
 
         # Category filter
         self.combo_category = QComboBox()
-        for cat_id, label in self.CATEGORY_OPTIONS:
+        for cat_id, label_key, label_default in self.CATEGORY_OPTIONS:
+            label = tr(label_key, label_default)
             self.combo_category.addItem(label, cat_id)
         toolbar.addWidget(self.combo_category)
 
@@ -234,7 +235,7 @@ class LargeFilesPage(QWidget):
         self.btn_scan.setEnabled(False)
         self.prog_bar.setVisible(True)
         self.lbl_scan_status.setVisible(True)
-        self.lbl_scan_status.setText(f"{drive} dagi katta fayllar skanerlanmoqda...")
+        self.lbl_scan_status.setText(tr("lf_scanning", "{drive} dagi katta fayllar skanerlanmoqda...", drive=drive))
 
         self.worker = LargeFileScanWorker(
             scanner=self.scanner,
@@ -248,7 +249,8 @@ class LargeFilesPage(QWidget):
         self.worker.start()
 
     def _on_scan_progress(self, current_folder: str, count: int) -> None:
-        self.lbl_scan_status.setText(f"Topildi: {count} ta • {current_folder[-50:] if len(current_folder) > 50 else current_folder}")
+        folder = current_folder[-50:] if len(current_folder) > 50 else current_folder
+        self.lbl_scan_status.setText(tr("lf_progress", "Topildi: {count} ta • {folder}", count=count, folder=folder))
 
     def _on_scan_completed(self, items: List[LargeFileItem]) -> None:
         self.items = items
@@ -304,18 +306,18 @@ class LargeFilesPage(QWidget):
                 act_layout.setSpacing(6)
 
                 btn_reveal = QPushButton("📂")
-                btn_reveal.setToolTip("Faylni papkada ko'rsatish")
+                btn_reveal.setToolTip(tr("tip_reveal_in_folder", "Faylni papkada ko'rsatish"))
                 btn_reveal.setFixedSize(30, 26)
                 btn_reveal.clicked.connect(lambda _, p=it.path: self._reveal_in_explorer(p))
                 act_layout.addWidget(btn_reveal)
 
                 if it.is_protected:
-                    lbl_prot = QLabel("🛡️ Himoyalangan")
+                    lbl_prot = QLabel("🛡️ " + tr("lbl_protected", "Himoyalangan"))
                     lbl_prot.setStyleSheet("color: #6B7280; font-size: 11px;")
                     act_layout.addWidget(lbl_prot)
                 else:
                     btn_del = QPushButton("🗑️")
-                    btn_del.setToolTip("Faylni xavfsiz o'chirish")
+                    btn_del.setToolTip(tr("tip_safe_delete", "Faylni Savatga ko'chirish"))
                     btn_del.setFixedSize(30, 26)
                     btn_del.setStyleSheet("background-color: #EF4444; color: white;")
                     btn_del.clicked.connect(lambda _, item=it: self._delete_file(item))
@@ -328,7 +330,7 @@ class LargeFilesPage(QWidget):
     def _reveal_in_explorer(self, filepath: str) -> None:
         """Open Windows Explorer and select the specified file."""
         if not os.path.exists(filepath):
-            QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), "Fayl diskda topilmadi.")
+            QMessageBox.warning(self, tr("msg_error_title", "Xatolik"), tr("msg_file_not_found", "Fayl diskda topilmadi."))
             return
         subprocess.run(["explorer.exe", f"/select,{filepath}"], check=False)
 
@@ -338,7 +340,10 @@ class LargeFilesPage(QWidget):
             QMessageBox.warning(
                 self,
                 tr("msg_protected_title", "Tizim himoyasi"),
-                "Ushbu fayl Windows tizim yadrosi yoki muhim zaxiralar tarkibida bo'lgani sababli uni o'chirish taqiqlanadi.",
+                tr(
+                    "lf_protected_msg",
+                    "Ushbu fayl Windows tizim yadrosi yoki muhim zaxiralar tarkibida bo'lgani sababli uni o'chirish taqiqlanadi.",
+                ),
             )
             return
 

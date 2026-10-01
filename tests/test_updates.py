@@ -2,8 +2,6 @@
 Unit tests for Windows Update and WinSxS Component Store Cleaner.
 """
 
-import os
-import subprocess
 from unittest.mock import patch, MagicMock
 from cleanguard.windows.updates import WindowsUpdateCleaner
 
@@ -68,7 +66,7 @@ def test_run_dism_success():
         with patch("subprocess.run", return_value=mock_proc):
             ok, msg = cleaner.run_dism_component_cleanup()
             assert ok
-            assert "successfully" in msg
+            assert "muvaffaqiyatli" in msg  # localized success message
 
 
 def test_run_dism_failure():

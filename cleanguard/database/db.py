@@ -7,8 +7,13 @@ import sqlite3
 import threading
 import time
 from contextlib import contextmanager
-from typing import Optional, Generator
-from cleanguard.database.schema import CREATE_TABLES_SQL, CURRENT_SCHEMA_VERSION
+from typing import Generator, List, Optional
+from cleanguard.database.schema import (
+    BASE_SCHEMA_SQL,
+    BASE_SCHEMA_VERSION,
+    CURRENT_SCHEMA_VERSION,
+    MIGRATIONS,
+)
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("database")
@@ -58,26 +63,50 @@ class DatabaseManager:
             conn.close()
 
     def _initialize_database(self) -> None:
-        """Apply schema and run migrations."""
+        """Create the base schema, then apply pending migrations in order."""
         with self._lock:
             try:
                 os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
-                with self.session() as conn:
-                    cursor = conn.cursor()
-                    cursor.executescript(CREATE_TABLES_SQL)
-
-                    # Check schema version
-                    cursor.execute("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1;")
-                    row = cursor.fetchone()
-                    # Schema is additive (CREATE ... IF NOT EXISTS), so recording the
-                    # new version is the whole migration for existing databases.
-                    if not row or row[0] < CURRENT_SCHEMA_VERSION:
-                        cursor.execute(
+                conn = self.get_connection()
+                try:
+                    conn.executescript(BASE_SCHEMA_SQL)
+                    current = self.get_schema_version(conn)
+                    if current == 0:
+                        conn.execute(
                             "INSERT INTO schema_version (version, applied_at) VALUES (?, ?);",
-                            (CURRENT_SCHEMA_VERSION, time.time()),
+                            (BASE_SCHEMA_VERSION, time.time()),
                         )
+                        conn.commit()
+                        current = BASE_SCHEMA_VERSION
+
+                    if current > CURRENT_SCHEMA_VERSION:
+                        logger.warning(
+                            f"Database schema v{current} is newer than this build (v{CURRENT_SCHEMA_VERSION}); "
+                            "no migrations applied."
+                        )
+                    for version in sorted(v for v in MIGRATIONS if v > current):
+                        self._apply_migration(conn, version, MIGRATIONS[version])
+                finally:
+                    conn.close()
                 logger.info(f"Database initialized successfully at {self.db_path}.")
             except Exception as exc:
                 logger.error(f"Failed to initialize database: {exc}")
                 raise
 
+    @staticmethod
+    def get_schema_version(conn: sqlite3.Connection) -> int:
+        row = conn.execute("SELECT MAX(version) FROM schema_version;").fetchone()
+        return int(row[0]) if row and row[0] is not None else 0
+
+    @staticmethod
+    def _apply_migration(conn: sqlite3.Connection, version: int, statements: List[str]) -> None:
+        """Run one migration atomically: its statements and the version row commit together."""
+        version_row = f"INSERT INTO schema_version (version, applied_at) VALUES ({int(version)}, {time.time()!r});"
+        script = "\n".join(["BEGIN;", *statements, version_row, "COMMIT;"])
+        try:
+            conn.executescript(script)
+        except Exception:
+            conn.rollback()
+            logger.error(f"Database migration v{version} failed and was rolled back.")
+            raise
+        logger.info(f"Applied database migration v{version}.")

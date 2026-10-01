@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QHeaderView,
-    QCheckBox,
     QMessageBox,
     QDialog,
     QListWidget,
@@ -169,7 +168,7 @@ class RegistryPage(QWidget):
         self.btn_clean.clicked.connect(self._on_clean_clicked)
         action_bar.addWidget(self.btn_clean)
 
-        self.lbl_status = QLabel("Holat: Skanerlashga tayyor")
+        self.lbl_status = QLabel(tr("reg_status_ready", "Holat: Skanerlashga tayyor"))
         self.lbl_status.setStyleSheet("color: #9CA3AF; font-size: 13px; margin-left: 12px;")
         action_bar.addWidget(self.lbl_status)
         action_bar.addStretch()
@@ -179,7 +178,12 @@ class RegistryPage(QWidget):
         # Issues Table
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Muammo tavsifi", "Toifa", "Kalit joylashuvi", "Reestr qiymati"])
+        self.table.setHorizontalHeaderLabels([
+            tr("col_issue", "Muammo tavsifi"),
+            tr("col_type", "Toifa"),
+            tr("col_key_path", "Kalit joylashuvi"),
+            tr("col_reg_value", "Reestr qiymati"),
+        ])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -190,7 +194,7 @@ class RegistryPage(QWidget):
 
     def start_scan(self) -> None:
         self.btn_scan.setEnabled(False)
-        self.lbl_status.setText("Reestr skanerlanmoqda...")
+        self.lbl_status.setText(tr("reg_scanning", "Reestr skanerlanmoqda..."))
         self.scan_worker = RegistryScanWorker(self.cleaner, self)
         self.scan_worker.finished.connect(self._on_scan_completed)
         self.scan_worker.start()
@@ -198,7 +202,9 @@ class RegistryPage(QWidget):
     def _on_scan_completed(self, issues: List[RegistryIssue]) -> None:
         self.btn_scan.setEnabled(True)
         self.issues = issues
-        self.lbl_status.setText(f"Topildi: {len(issues)} ta eskirgan reestr yozuvi (Xavfsiz tozalash mumkin)")
+        self.lbl_status.setText(
+            tr("reg_found", "Topildi: {count} ta eskirgan reestr yozuvi (xavfsiz tozalash mumkin)", count=len(issues))
+        )
         self.btn_clean.setEnabled(len(issues) > 0)
         self._populate_table()
 

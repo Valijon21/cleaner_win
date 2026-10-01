@@ -6,14 +6,12 @@ import os
 import time
 import logging
 import threading
-import tempfile
 import pytest
 from cleanguard.utils.logging import (
     setup_logging,
     get_logger,
     get_memory_logs,
     clear_memory_logs,
-    set_log_level,
     shutdown_logging,
     log_step,
     MemoryLogHandler,

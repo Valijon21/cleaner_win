@@ -15,7 +15,6 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QFileDialog,
     QProgressBar,
-    QFrame,
     QMessageBox,
     QHeaderView,
 )
@@ -149,7 +148,7 @@ class DuplicatesPage(QWidget):
 
         # Quick Actions Bar
         self.action_bar = QHBoxLayout()
-        self.lbl_stats = QLabel("Dublikatlar topilmadi")
+        self.lbl_stats = QLabel(tr("dup_none_found", "Dublikatlar topilmadi"))
         self.lbl_stats.setStyleSheet("color: #9CA3AF; font-size: 13px;")
         self.action_bar.addWidget(self.lbl_stats)
         self.action_bar.addStretch()
@@ -164,7 +163,7 @@ class DuplicatesPage(QWidget):
         self.btn_keep_newest.clicked.connect(lambda: self._apply_auto_selection("newest"))
         self.action_bar.addWidget(self.btn_keep_newest)
 
-        self.btn_clean_duplicates = QPushButton("🗑️ Tanlangan dublikatlarni o'chirish")
+        self.btn_clean_duplicates = QPushButton(tr("btn_clean_duplicates", "🗑️ Tanlangan dublikatlarni o'chirish"))
         self.btn_clean_duplicates.setCursor(Qt.PointingHandCursor)
         self.btn_clean_duplicates.setStyleSheet("background-color: #EF4444; font-weight: 700; color: white; padding: 6px 14px; border-radius: 6px;")
         self.btn_clean_duplicates.clicked.connect(self._on_clean_duplicates)
@@ -174,7 +173,12 @@ class DuplicatesPage(QWidget):
 
         # Results Tree Widget
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Fayl nomi / Joylashuvi", "Hajmi", "O'zgartirilgan sana", "Belgi"])
+        self.tree.setHeaderLabels([
+            tr("tbl_file_path", "Fayl nomi / Joylashuvi"),
+            tr("tbl_size", "Hajmi"),
+            tr("tbl_modified_date", "O'zgartirilgan sana"),
+            tr("tbl_marker", "Belgi"),
+        ])
         self.tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
         self.tree.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.tree.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -208,11 +212,13 @@ class DuplicatesPage(QWidget):
         self.btn_start_scan.setEnabled(False)
         self.progress_bar.setVisible(True)
         self.progress_bar.setRange(0, 0)
-        self.lbl_stats.setText("Skanerlanmoqda, kuting...")
+        self.lbl_stats.setText(tr("dup_scanning", "Skanerlanmoqda, kuting..."))
         self.tree.clear()
 
         self.worker = DuplicateScanWorker(target, min_size_bytes=min_size, parent=self)
-        self.worker.progress.connect(lambda count, path: self.lbl_stats.setText(f"Tekshirilmoqda ({count} ta fayl): {os.path.basename(path)}"))
+        self.worker.progress.connect(lambda count, path: self.lbl_stats.setText(
+            tr("dup_checking", "Tekshirilmoqda ({count} ta fayl): {name}", count=count, name=os.path.basename(path))
+        ))
         self.worker.finished.connect(self._on_scan_finished)
         self.worker.start()
 
@@ -225,13 +231,23 @@ class DuplicatesPage(QWidget):
         tot_reclaim = sum(g.reclaimable_bytes for g in groups)
 
         self.lbl_stats.setText(
-            f"Topildi: {len(groups)} ta guruh, {tot_dups} ta ortiqcha nusxa ({format_bytes(tot_reclaim)} bo'shatilishi mumkin)"
+            tr(
+                "dup_found_summary",
+                "Topildi: {groups} ta guruh, {dups} ta ortiqcha nusxa ({size} bo'shatilishi mumkin)",
+                groups=len(groups),
+                dups=tot_dups,
+                size=format_bytes(tot_reclaim),
+            )
         )
 
         self.tree.clear()
         for idx, grp in enumerate(groups, 1):
             top_item = QTreeWidgetItem(self.tree)
-            top_item.setText(0, f"Guruh #{idx} ({len(grp.items)} ta nusxa) — Xesh: {grp.file_hash[:8]}...")
+            top_item.setText(
+                0,
+                tr("dup_group_title", "Guruh #{idx} ({count} ta nusxa) — Xesh: {hash}...",
+                   idx=idx, count=len(grp.items), hash=grp.file_hash[:8]),
+            )
             top_item.setText(1, format_bytes(grp.file_size))
             top_item.setExpanded(True)
 

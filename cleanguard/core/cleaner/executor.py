@@ -12,11 +12,12 @@ from cleanguard.core.contracts import (
     CleanupSummary,
     CleanupStatus,
     CleanupStrategy,
+    CleanCategory,
     ErrorCode,
 )
 from cleanguard.core.scanner.base import CancellationToken
 from cleanguard.core.safety import SafetyEngine
-from cleanguard.core.cleaner.strategy import execute_deletion
+from cleanguard.core.cleaner.strategy import execute_deletion, recycle_bin_root_drive
 from cleanguard.utils.filesystem import prune_empty_directories, is_path_under_directory
 from cleanguard.windows.known_folders import get_known_folders
 from cleanguard.utils.logging import get_logger
@@ -59,112 +60,66 @@ class CleanupExecutor:
         total_items = len(planned_items)
         logger.info(f"Starting Cleanup Session {cleanup_id} ({total_items} targets).")
 
+        def record(item: ScanItem, status: CleanupStatus, err: ErrorCode = ErrorCode.NONE, msg: str = "") -> None:
+            item_results.append(
+                CleanupItemResult(
+                    path=item.path,
+                    category=item.category,
+                    risk_level=item.risk_level,
+                    size=item.size,
+                    status=status,
+                    strategy=strategy,
+                    error_code=err,
+                    error_message=msg,
+                )
+            )
+
+        cancel_logged = False
         for idx, item in enumerate(planned_items):
             if token.is_cancelled():
-                logger.info(f"Cleanup Session {cleanup_id} cancelled by user.")
-                item_results.append(
-                    CleanupItemResult(
-                        path=item.path,
-                        category=item.category,
-                        risk_level=item.risk_level,
-                        size=item.size,
-                        status=CleanupStatus.CANCELLED,
-                        strategy=strategy,
-                        error_code=ErrorCode.USER_CANCELLED,
-                        error_message="Cleanup cancelled by user.",
-                    )
-                )
+                if not cancel_logged:
+                    logger.info(f"Cleanup Session {cleanup_id} cancelled by user.")
+                    cancel_logged = True
+                record(item, CleanupStatus.CANCELLED, ErrorCode.USER_CANCELLED, "Cleanup cancelled by user.")
                 skipped_count += 1
                 continue
 
-            # TOCTOU Mitigation: Revalidate target immediately before deletion
-            # Special case for Recycle Bin root item
-            if item.path.endswith("$Recycle.Bin"):
-                ok, err, msg = execute_deletion(item.path, strategy=strategy, drive_letter=item.path[:2])
+            # Recycle Bin root entries are emptied through the Shell API. Only an exact
+            # drive-root "$Recycle.Bin" path of the recycle_bin category qualifies; any
+            # other path ending in that name goes through the full safety gate.
+            if item.category == CleanCategory.RECYCLE_BIN.value and recycle_bin_root_drive(item.path):
+                ok, err, msg = execute_deletion(item.path, strategy=strategy)
                 if ok:
                     deleted_count += 1
                     recovered_bytes += item.size
-                    item_results.append(
-                        CleanupItemResult(
-                            path=item.path,
-                            category=item.category,
-                            risk_level=item.risk_level,
-                            size=item.size,
-                            status=CleanupStatus.SUCCESS,
-                            strategy=strategy,
-                        )
-                    )
+                    record(item, CleanupStatus.SUCCESS)
                 else:
                     failed_count += 1
-                    item_results.append(
-                        CleanupItemResult(
-                            path=item.path,
-                            category=item.category,
-                            risk_level=item.risk_level,
-                            size=item.size,
-                            status=CleanupStatus.FAILED,
-                            strategy=strategy,
-                            error_code=err,
-                            error_message=msg,
-                        )
-                    )
-                continue
-
-            # Standard File Validation
-            approved, err_code, reason = self.safety_engine.verify_cleanup_target(
-                path=item.path,
-                category=item.category,
-            )
-
-            if not approved:
-                logger.warning(f"Target {item.path} rejected at deletion safety gate: {reason}")
-                skipped_count += 1
-                item_results.append(
-                    CleanupItemResult(
-                        path=item.path,
-                        category=item.category,
-                        risk_level=item.risk_level,
-                        size=item.size,
-                        status=CleanupStatus.SKIPPED,
-                        strategy=strategy,
-                        error_code=err_code,
-                        error_message=reason,
-                    )
-                )
-                continue
-
-            # Execute deletion
-            success, err, msg = execute_deletion(item.path, strategy=strategy)
-            if success:
-                deleted_count += 1
-                recovered_bytes += item.size
-                affected_dirs.add(os.path.dirname(item.path))
-                item_results.append(
-                    CleanupItemResult(
-                        path=item.path,
-                        category=item.category,
-                        risk_level=item.risk_level,
-                        size=item.size,
-                        status=CleanupStatus.SUCCESS,
-                        strategy=strategy,
-                    )
-                )
+                    record(item, CleanupStatus.FAILED, err, msg)
             else:
-                failed_count += 1
-                logger.warning(f"Failed to delete '{item.path}': [{err}] {msg}")
-                item_results.append(
-                    CleanupItemResult(
-                        path=item.path,
-                        category=item.category,
-                        risk_level=item.risk_level,
-                        size=item.size,
-                        status=CleanupStatus.FAILED,
-                        strategy=strategy,
-                        error_code=err,
-                        error_message=msg,
-                    )
+                # TOCTOU Mitigation: Revalidate target immediately before deletion
+                approved, err_code, reason = self.safety_engine.verify_cleanup_target(
+                    path=item.path,
+                    category=item.category,
                 )
+                if not approved:
+                    logger.warning(f"Target {item.path} rejected at deletion safety gate: {reason}")
+                    skipped_count += 1
+                    record(item, CleanupStatus.SKIPPED, err_code, reason)
+                else:
+                    success, err, msg = execute_deletion(item.path, strategy=strategy)
+                    if success:
+                        deleted_count += 1
+                        recovered_bytes += item.size
+                        affected_dirs.add(os.path.dirname(item.path))
+                        record(item, CleanupStatus.SUCCESS)
+                    else:
+                        failed_count += 1
+                        logger.warning(f"Failed to delete '{item.path}': [{err}] {msg}")
+                        record(item, CleanupStatus.FAILED, err, msg)
 
+            # Report progress for every processed item (skipped ones included) so the
+            # progress bar always reaches 100%.
             now = time.time()
             if progress_callback and (idx == 0 or idx == total_items - 1 or (now - last_report_time) >= 0.08):
                 last_report_time = now

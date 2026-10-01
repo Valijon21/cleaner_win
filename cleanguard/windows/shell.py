@@ -5,6 +5,7 @@ Strictly compatible with Windows 7 SP1 through Windows 11.
 
 import sys
 import ctypes
+from ctypes import wintypes
 
 # Windows File Attributes
 FILE_ATTRIBUTE_READONLY = 0x00000001
@@ -26,14 +27,37 @@ ERROR_SHARING_VIOLATION = 32
 ERROR_LOCK_VIOLATION = 33
 ERROR_ACCESS_DENIED = 5
 
+_kernel32 = None
+
+
+def _get_kernel32():
+    """
+    Load kernel32 with explicit prototypes.
+    Without restype declarations ctypes assumes a signed 32-bit int, which turns
+    INVALID_FILE_ATTRIBUTES (0xFFFFFFFF) into -1 and truncates 64-bit HANDLEs.
+    """
+    global _kernel32
+    if _kernel32 is None:
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.GetFileAttributesW.argtypes = [wintypes.LPCWSTR]
+        k32.GetFileAttributesW.restype = wintypes.DWORD
+        k32.CreateFileW.argtypes = [
+            wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p,
+            wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE,
+        ]
+        k32.CreateFileW.restype = wintypes.HANDLE
+        k32.CloseHandle.argtypes = [wintypes.HANDLE]
+        k32.CloseHandle.restype = wintypes.BOOL
+        _kernel32 = k32
+    return _kernel32
+
 
 def get_file_attributes(path: str) -> int:
     """Get Win32 file attributes using GetFileAttributesW."""
     if sys.platform != "win32":
         return 0
     try:
-        kernel32 = ctypes.windll.kernel32
-        return kernel32.GetFileAttributesW(path)
+        return int(_get_kernel32().GetFileAttributesW(path))
     except Exception:
         return INVALID_FILE_ATTRIBUTES
 
@@ -70,7 +94,7 @@ def is_file_locked(path: str) -> bool:
         # Directories are not locked this way
         return False
 
-    kernel32 = ctypes.windll.kernel32
+    kernel32 = _get_kernel32()
     handle = kernel32.CreateFileW(
         path,
         GENERIC_READ,
@@ -81,8 +105,8 @@ def is_file_locked(path: str) -> bool:
         None,
     )
 
-    if handle == INVALID_HANDLE_VALUE or handle == -1:
-        last_error = kernel32.GetLastError()
+    if handle is None or handle == INVALID_HANDLE_VALUE:
+        last_error = ctypes.get_last_error()
         if last_error in (ERROR_SHARING_VIOLATION, ERROR_LOCK_VIOLATION, ERROR_ACCESS_DENIED):
             return True
         return False

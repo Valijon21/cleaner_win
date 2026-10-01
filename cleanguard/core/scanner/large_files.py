@@ -11,6 +11,7 @@ from typing import List, Optional, Set, Callable
 from cleanguard.security.protected_paths import ProtectedPathRegistry, HARD_PROTECTED_FILENAMES
 from cleanguard.utils.filesystem import normalize_path
 from cleanguard.windows.drives import enumerate_drives
+from cleanguard.windows.shell import is_reparse_point_or_junction
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("core.scanner.large_files")
@@ -78,28 +79,31 @@ class LargeFileScanner:
         base_name = os.path.basename(filepath).lower()
         if base_name in HARD_PROTECTED_FILENAMES:
             return True
-        norm = normalize_path(filepath)
-        # Check against protected roots (Windows, System32, WinSxS, Recovery, etc.)
-        for p in self.protected_registry.get_protected_paths():
-            if norm.startswith(p):
-                return True
-        return False
+        return self.protected_registry.is_protected_path(filepath)
 
     def delete_file(self, item: LargeFileItem):
-        """Safely delete a large file if not protected by SafetyEngine."""
+        """
+        Move a large file to the Recycle Bin if the SafetyEngine allows it.
+        Large files are user data, so they are never deleted permanently.
+        """
         if item.is_protected or self.is_file_protected(item.path):
             return False, "Deletion blocked by SafetyEngine: Protected system or core file."
 
         if not os.path.exists(item.path):
             return False, f"File not found on disk: {item.path}"
 
-        try:
-            os.remove(item.path)
-            logger.info("Successfully deleted large file: %s (%d bytes)", item.path, item.size)
-            return True, f"Successfully deleted: {item.name}"
-        except OSError as e:
-            logger.error("Failed to delete large file %s: %s", item.path, e)
-            return False, f"Failed to delete file: {e}"
+        # Imported lazily: core.cleaner depends on the safety stack, which this
+        # lightweight scanner module should not pull in at import time.
+        from cleanguard.core.cleaner.user_data import recycle_user_items
+
+        result = recycle_user_items([(item.path, item.size)])
+        if result.removed:
+            logger.info("Moved large file to Recycle Bin: %s (%d bytes)", item.path, item.size)
+            return True, f"Moved to Recycle Bin: {item.name}"
+
+        reason = (result.rejected or result.failed)[0][1]
+        logger.error("Failed to remove large file %s: %s", item.path, reason)
+        return False, reason
 
     def scan_path(
         self,
@@ -125,9 +129,12 @@ class LargeFileScanner:
                     break
 
                 # Skip standard system volume and recycle bin roots from deep directory walks
+                # Also prune junctions: before Python 3.12 os.walk() descends into
+                # them, which double-counts files (and can loop) on a full-drive walk.
                 dirs[:] = [
                     d for d in dirs
                     if d.lower() not in ("$recycle.bin", "system volume information", "$windows.~bt", "winsxs")
+                    and not is_reparse_point_or_junction(os.path.join(root, d))
                 ]
 
                 for name in files:

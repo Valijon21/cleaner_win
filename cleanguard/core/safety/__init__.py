@@ -31,6 +31,29 @@ class SafetyEngine:
         self.path_guard = path_guard or PathGuard(self.protected_registry)
         self.risk_engine = risk_engine or RiskEngine(self.protected_registry, self.path_guard)
 
+    def is_protected_path(self, path: str) -> bool:
+        """True if path is a system/user protected location or a custom exclusion."""
+        return self.protected_registry.is_protected_path(path)
+
+    def verify_user_data_target(self, path: str) -> Tuple[bool, ErrorCode, str]:
+        """
+        Gate for user-initiated removal of user data (duplicates, large files,
+        uninstall leftovers). These live outside the cleanup scanners' roots, so
+        only the hard invariants apply: target exists, is not protected and is not
+        a reparse point.
+        """
+        if safe_stat(path) is None:
+            return False, ErrorCode.FILE_NOT_FOUND, "Target no longer exists on disk."
+        valid, err_code, reason = self.path_guard.validate_target_path(
+            target_path=path,
+            allowed_boundary_roots=None,
+            allow_reparse_points=False,
+        )
+        if not valid:
+            logger.warning(f"Safety Gate REJECTED user-data removal of {path}: {reason}")
+            return False, err_code, reason
+        return True, ErrorCode.NONE, "Safety Gate approved target."
+
     def evaluate_scan_candidate(
         self,
         path: str,

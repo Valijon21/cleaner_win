@@ -345,23 +345,38 @@ class LargeFilesPage(QWidget):
         reply = QMessageBox.question(
             self,
             tr("confirm_delete_title", "O'chirishni tasdiqlang"),
-            f"Rostdan ham ushbu katta faylni o'chirmoqchimisiz?\n\n{item.name} ({format_bytes(item.size)})\n{item.path}",
+            tr(
+                "large_file_delete_confirm",
+                "Ushbu fayl Savatga (Recycle Bin) ko'chirilsinmi?\n\n{name} ({size})\n{path}",
+                name=item.name,
+                size=format_bytes(item.size),
+                path=item.path,
+            ),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
-        if reply == QMessageBox.Yes:
-            try:
-                os.remove(item.path)
-                QMessageBox.information(
-                    self,
-                    tr("msg_success_title", "Muvaffaqiyatli"),
-                    f"Fayl o'chirildi va {format_bytes(item.size)} joy bo'shatildi!",
-                )
-                # Remove from current list and refresh table
-                self.items = [x for x in self.items if x.path != item.path]
-                self._populate_table(self.items)
-                total_bytes = sum(x.size for x in self.items)
-                self.card_count.lbl_val.setText(str(len(self.items)))
-                self.card_total_size.lbl_val.setText(format_bytes(total_bytes))
-            except Exception as e:
-                QMessageBox.critical(self, tr("msg_error_title", "Xatolik"), f"Faylni o'chirib bo'lmadi: {e}")
+        if reply != QMessageBox.Yes:
+            return
+
+        # Same gate as every other user-data removal: protected-path and reparse
+        # checks, then a recoverable move to the Recycle Bin (never os.remove).
+        ok, msg = self.scanner.delete_file(item)
+        if not ok:
+            QMessageBox.critical(
+                self,
+                tr("msg_error_title", "Xatolik"),
+                tr("large_file_delete_failed", "Faylni o'chirib bo'lmadi: {error}", error=msg),
+            )
+            return
+
+        QMessageBox.information(
+            self,
+            tr("msg_success_title", "Muvaffaqiyatli"),
+            tr("large_file_deleted", "Fayl Savatga ko'chirildi, {size} joy bo'shatildi.", size=format_bytes(item.size)),
+        )
+        # Remove from current list and refresh table
+        self.items = [x for x in self.items if x.path != item.path]
+        self._populate_table(self.items)
+        total_bytes = sum(x.size for x in self.items)
+        self.card_count.lbl_val.setText(str(len(self.items)))
+        self.card_total_size.lbl_val.setText(format_bytes(total_bytes))

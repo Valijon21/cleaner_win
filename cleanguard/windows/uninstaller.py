@@ -5,7 +5,7 @@ Compatible with Windows 7 SP1, 8, 8.1, 10, and 11.
 """
 
 import os
-import shlex
+import re
 import subprocess
 import winreg
 from dataclasses import dataclass
@@ -13,9 +13,36 @@ from typing import List, Optional, Tuple, Dict, Any
 from cleanguard.core.contracts import ScanItem, CleanCategory, RiskLevel
 from cleanguard.security.protected_paths import is_system_critical_path
 from cleanguard.utils.filesystem import safe_stat, normalize_path
+from cleanguard.windows.shell import is_reparse_point_or_junction
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("windows.uninstaller")
+
+# Shared vendor / platform folders under AppData and ProgramData. They hold data
+# for many applications, so they are never offered as one app's leftover.
+SHARED_DATA_FOLDERS = {
+    "microsoft", "windows", "packages", "programs", "temp", "google", "mozilla",
+    "apple", "adobe", "intel", "nvidia", "amd", "oracle", "java", "package cache",
+    "comms", "connecteddevicesplatform", "d3dscache", "crashdumps", "cleanguard",
+    "microsoft help", "regid.1991-06.com.microsoft", "ssh", "usoshared", "softwaredistribution",
+}
+
+_PARENS_RE = re.compile(r"\(.*?\)|\[.*?\]")
+_VERSION_TAIL_RE = re.compile(r"[\s_-]+v?\d+(?:[.\d]*)(?:\s.*)?$", re.IGNORECASE)
+_NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
+
+
+def leftover_match_key(name: str) -> str:
+    """
+    Reduce an application or folder name to a comparison key:
+    "Notepad++ 8.6.4 (64-bit)" -> "notepad". Parenthesised suffixes and trailing
+    version numbers are dropped, then everything but [a-z0-9] is removed.
+    """
+    if not name:
+        return ""
+    core = _PARENS_RE.sub(" ", name).strip()
+    core = _VERSION_TAIL_RE.sub("", core)
+    return _NON_ALNUM_RE.sub("", core.lower())
 
 # Registry keys containing installed software
 UNINSTALL_REG_KEYS = [
@@ -144,10 +171,15 @@ class AppUninstallerManager:
         Scan user profile and system data directories for residual folders matching the application name.
         Uses strict boundaries to never suggest deleting protected roots.
         """
-        if not app_name or len(app_name.strip()) < 3:
+        app_key = leftover_match_key(app_name or "")
+        # Short keys ("Git", "VLC" are fine, "Go"/"R" are not) would match unrelated folders.
+        if len(app_key) < 3:
             return []
-
-        clean_name = app_name.strip().lower()
+        publisher_key = leftover_match_key(publisher or "")
+        app_keys = {app_key}
+        # "Mozilla Firefox" by "Mozilla" is stored as ...\Mozilla\Firefox
+        if publisher_key and app_key.startswith(publisher_key) and len(app_key) - len(publisher_key) >= 3:
+            app_keys.add(app_key[len(publisher_key):])
         candidates: List[str] = []
 
         search_roots = [
@@ -155,6 +187,13 @@ class AppUninstallerManager:
             self.appdata,
             self.programdata,
         ]
+
+        def is_app_folder(folder_name: str) -> bool:
+            # Exact key match only. The previous substring test ("git" in "digital")
+            # proposed unrelated applications' data for deletion.
+            if folder_name.strip().lower() in SHARED_DATA_FOLDERS:
+                return False
+            return leftover_match_key(folder_name) in app_keys
 
         for root in search_roots:
             if not root or not os.path.exists(root):
@@ -165,16 +204,17 @@ class AppUninstallerManager:
                     if not os.path.isdir(entry_path):
                         continue
 
-                    # Direct match
-                    if entry.lower() == clean_name or clean_name in entry.lower():
+                    # Direct match: <root>\<AppName>
+                    if is_app_folder(entry):
                         candidates.append(entry_path)
+                        continue
 
-                    # Subfolder under publisher
-                    if publisher and publisher.lower() in entry.lower():
+                    # Vendor layout: <root>\<Publisher>\<AppName>
+                    if publisher_key and len(publisher_key) >= 3 and leftover_match_key(entry) == publisher_key:
                         try:
                             for sub_entry in os.listdir(entry_path):
                                 sub_path = os.path.join(entry_path, sub_entry)
-                                if os.path.isdir(sub_path) and clean_name in sub_entry.lower():
+                                if os.path.isdir(sub_path) and is_app_folder(sub_entry):
                                     candidates.append(sub_path)
                         except OSError:
                             pass
@@ -186,6 +226,10 @@ class AppUninstallerManager:
             norm_c = normalize_path(c_path)
             # Must not be a system-critical protected root
             if is_system_critical_path(norm_c):
+                continue
+
+            # Never follow a junction out of the AppData tree
+            if os.path.islink(c_path) or is_reparse_point_or_junction(c_path):
                 continue
 
             # Calculate total size of directory
@@ -224,14 +268,12 @@ class AppUninstallerManager:
             return False, "No uninstall string available for this application."
 
         try:
-            cmd = app.uninstall_string.strip()
-            # If command starts with MsiExec.exe, launch directly
+            # The command line comes from the registry. Run it directly (no cmd.exe)
+            # so shell metacharacters in it are not interpreted.
+            cmd = os.path.expandvars(app.uninstall_string.strip())
+            subprocess.Popen(cmd, shell=False)
             if "msiexec" in cmd.lower():
-                subprocess.Popen(cmd, shell=True)
                 return True, "Launched Windows Installer uninstallation."
-
-            # Otherwise launch standard uninstaller binary
-            subprocess.Popen(cmd, shell=True)
             return True, f"Launched uninstaller for '{app.name}'."
         except Exception as ex:
             logger.error("Failed executing uninstaller for %s: %s", app.name, ex)

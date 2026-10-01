@@ -28,6 +28,7 @@ KNOWN_FOLDER_GUIDS = {
     "Downloads": "{374DE290-123F-4565-9164-39C4925E467B}",
     "Pictures": "{33E28130-4E1E-4676-835A-98395C3BC3BB}",
     "Videos": "{18989B1D-9E62-4BAE-9EEB-30E10357614E}",
+    "Music": "{4BD8D571-6D19-48D3-BE97-422220080E43}",
 }
 
 
@@ -67,6 +68,7 @@ class KnownFolders:
     downloads: str
     pictures: str
     videos: str
+    music: str = ""
 
 
 class KnownFolderResolver:
@@ -135,6 +137,8 @@ class KnownFolderResolver:
             return os.path.join(os.path.expanduser("~"), "Pictures")
         elif name == "Videos":
             return os.path.join(os.path.expanduser("~"), "Videos")
+        elif name == "Music":
+            return os.path.join(os.path.expanduser("~"), "Music")
         return ""
 
     def get_user_temp(self) -> str:
@@ -177,6 +181,7 @@ class KnownFolderResolver:
             downloads=self.resolve_known_folder("Downloads"),
             pictures=self.resolve_known_folder("Pictures"),
             videos=self.resolve_known_folder("Videos"),
+            music=self.resolve_known_folder("Music"),
         )
         return self._folders
 

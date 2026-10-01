@@ -102,7 +102,10 @@ class HardwareEngine:
         if sys.platform != "win32":
             return 0
         try:
-            uptime_ms = ctypes.windll.kernel32.GetTickCount64()
+            get_tick_count64 = ctypes.windll.kernel32.GetTickCount64
+            # ULONGLONG: the default c_int restype overflows after ~24.8 days of uptime
+            get_tick_count64.restype = ctypes.c_uint64
+            uptime_ms = get_tick_count64()
             return int(uptime_ms // 1000)
         except Exception:
             return 0

@@ -13,15 +13,17 @@ from dataclasses import dataclass
 from typing import Optional, List
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from cleanguard.core.contracts import ScanItem, RiskLevel
 from cleanguard.core.scanner.engine import ScannerEngine
 from cleanguard.core.cleaner.executor import CleanupExecutor
+from cleanguard.core.cleaner.planner import CleanupPlanner
 from cleanguard.windows.registry_cleaner import SafeRegistryCleaner
 from cleanguard.windows.memory import flush_memory
 from cleanguard.windows.network import flush_dns
 from cleanguard.windows.updates import WindowsUpdateCleaner
 from cleanguard.windows.privileges import is_user_admin
 from cleanguard.database.db import DatabaseManager
+from cleanguard.database.repositories import HistoryRepository
+from cleanguard.localization import tr
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("services.smart_care")
@@ -74,38 +76,45 @@ class SmartCareWorker(QThread):
 
         try:
             # Stage 1: Junk File Cleaning (0% - 40%)
-            self.stage_changed.emit("1/4: Tizim axlatlari va keshni tozalash...", 10)
+            self.stage_changed.emit(tr("smart_care_stage_junk", "1/4: Tizim axlatlari va keshni tozalash..."), 10)
             summary, items = self.scanner.scan_all()
-            safe_items = [it for it in items if it.risk_level == RiskLevel.SAFE]
+            self._record(lambda repo: repo.record_scan_session(summary))
+            # Unattended mode: SAFE only, never the Recycle Bin or privacy history.
+            safe_items = CleanupPlanner.select_unattended(items)
 
             if safe_items:
-                self.stage_changed.emit(f"1/4: {len(safe_items)} ta xavfsiz fayllar tozalanmoqda...", 25)
-                cleanup_summary = self.cleaner.execute(safe_items)
+                self.stage_changed.emit(
+                    tr("smart_care_stage_junk_count", "1/4: {count} ta xavfsiz fayl tozalanmoqda...", count=len(safe_items)),
+                    25,
+                )
+                planned, _ = CleanupPlanner.build_plan(safe_items)
+                cleanup_summary = self.cleaner.execute(planned, scan_id=summary.scan_id)
                 result.junk_bytes_reclaimed = cleanup_summary.bytes_recovered
                 result.junk_files_deleted = cleanup_summary.files_deleted
-            self.stage_changed.emit("1/4: Tizim axlatlari tozalandi.", 40)
+                self._record(lambda repo: repo.record_cleanup_session(cleanup_summary))
+            self.stage_changed.emit(tr("smart_care_stage_junk_done", "1/4: Tizim axlatlari tozalandi."), 40)
 
             # Stage 2: Registry Repair with Automated Backup (40% - 70%)
-            self.stage_changed.emit("2/4: Reestr xatolarini tekshirish va zaxiralash...", 50)
+            self.stage_changed.emit(tr("smart_care_stage_registry", "2/4: Reestr xatolarini tekshirish va zaxiralash..."), 50)
             mui_issues = self.reg_cleaner.scan_mui_cache()
             mru_issues = self.reg_cleaner.scan_run_mru()
             all_issues = mui_issues + mru_issues
 
             if all_issues:
-                # Automatic backup before cleaning
-                self.reg_cleaner.create_backup(all_issues)
-                cleaned, _ = self.reg_cleaner.clean_issues(all_issues)
+                # clean_issues() writes the .reg backup itself and refuses to touch
+                # the registry if that backup cannot be created.
+                cleaned, _failed, _backup = self.reg_cleaner.clean_issues(all_issues, backup=True)
                 result.registry_issues_fixed = cleaned
-            self.stage_changed.emit("2/4: Reestr xatoliklari tuzatildi.", 70)
+            self.stage_changed.emit(tr("smart_care_stage_registry_done", "2/4: Reestr xatoliklari tuzatildi."), 70)
 
             # Stage 3: Turbo RAM Flush (70% - 85%)
-            self.stage_changed.emit("3/4: RAM tezkor xotirasi bo'shatilmoqda...", 75)
+            self.stage_changed.emit(tr("smart_care_stage_ram", "3/4: RAM tezkor xotirasi bo'shatilmoqda..."), 75)
             trimmed_count, freed_mem = flush_memory()
             result.ram_bytes_freed = freed_mem
-            self.stage_changed.emit("3/4: RAM kesh bo'shatildi.", 85)
+            self.stage_changed.emit(tr("smart_care_stage_ram_done", "3/4: RAM kesh bo'shatildi."), 85)
 
             # Stage 4: DNS Cache Flush & Windows Update (85% - 100%)
-            self.stage_changed.emit("4/4: DNS tarmoq keshini yangilash...", 90)
+            self.stage_changed.emit(tr("smart_care_stage_dns", "4/4: DNS tarmoq keshini yangilash..."), 90)
             success_dns, _ = flush_dns()
             result.dns_flushed = success_dns
 
@@ -115,9 +124,16 @@ class SmartCareWorker(QThread):
                     result.update_bytes_freed = freed_upd
 
             result.duration_seconds = round(time.time() - start_time, 2)
-            self.stage_changed.emit("Bajarildi! Tizim to'liq optimallandi.", 100)
+            self.stage_changed.emit(tr("smart_care_stage_done", "Bajarildi! Tizim to'liq optimallandi."), 100)
             self.finished.emit(result)
 
         except Exception as ex:
-            logger.error("Smart Care pipeline encountered error: %s", ex)
+            logger.error("Smart Care pipeline encountered error: %s", ex, exc_info=True)
             self.error.emit(str(ex))
+
+    def _record(self, action) -> None:
+        """Persist history so Smart Care results appear on the Dashboard and History pages."""
+        try:
+            action(HistoryRepository(self.db))
+        except Exception as exc:
+            logger.warning("Could not persist Smart Care history: %s", exc)

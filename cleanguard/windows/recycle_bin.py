@@ -26,6 +26,9 @@ FOF_SILENT = 0x0004
 FOF_NOCONFIRMATION = 0x0010
 FOF_ALLOWUNDO = 0x0040
 FOF_NOERRORUI = 0x0400
+# Ask the user before a file that does not fit in the Recycle Bin is destroyed
+# permanently (partially overrides FOF_NOCONFIRMATION).
+FOF_WANTNUKEWARNING = 0x4000
 
 
 class SHFILEOPSTRUCTW(ctypes.Structure):
@@ -35,7 +38,9 @@ class SHFILEOPSTRUCTW(ctypes.Structure):
         ("pFrom", ctypes.c_wchar_p),
         ("pTo", ctypes.c_wchar_p),
         ("fFlags", ctypes.c_ushort),
-        ("fAnyOperationsAborted", ctypes.c_bool),
+        # Win32 BOOL is a 4-byte int; c_bool (1 byte) shifts the offset and the
+        # abort flag written by the shell is never read back.
+        ("fAnyOperationsAborted", ctypes.c_int),
         ("hNameMappings", ctypes.c_void_p),
         ("lpszProgressTitle", ctypes.c_wchar_p),
     ]
@@ -82,10 +87,14 @@ def query_recycle_bin(drive_letter: Optional[str] = None) -> RecycleBinInfo:
     return RecycleBinInfo(drive=drive_letter or "ALL", total_size=0, num_items=0)
 
 
-def move_to_recycle_bin(file_path: str) -> bool:
+def move_to_recycle_bin(file_path: str, warn_if_permanent: bool = False) -> bool:
     """
     Send a file or directory to the Windows Recycle Bin using SHFileOperationW with FOF_ALLOWUNDO.
     This guarantees non-destructive cleanup with user recovery capability.
+
+    warn_if_permanent: for user data (large files, duplicates, leftovers) the shell
+    asks before destroying an item that is too large for the Recycle Bin instead of
+    silently deleting it permanently.
     """
     if sys.platform != "win32":
         return False
@@ -101,7 +110,9 @@ def move_to_recycle_bin(file_path: str) -> bool:
         file_op.pTo = None
         # FOF_ALLOWUNDO moves to Recycle Bin; FOF_NOCONFIRMATION avoids modal prompts
         file_op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI
-        file_op.fAnyOperationsAborted = False
+        if warn_if_permanent:
+            file_op.fFlags |= FOF_WANTNUKEWARNING
+        file_op.fAnyOperationsAborted = 0
 
         shell32 = ctypes.windll.shell32
         result = shell32.SHFileOperationW(ctypes.byref(file_op))

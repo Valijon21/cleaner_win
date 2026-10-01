@@ -4,7 +4,8 @@ Defines immutable hard system protection boundaries.
 """
 
 import os
-from typing import Set, List
+import threading
+from typing import Set, List, Optional
 from cleanguard.windows.known_folders import get_known_folders
 from cleanguard.utils.filesystem import normalize_path
 from cleanguard.core.config import ConfigManager
@@ -37,11 +38,23 @@ class ProtectedPathRegistry:
     def __init__(self, config_manager: ConfigManager = None):
         self.config = config_manager or ConfigManager()
         self._protected_directories: Set[str] = set()
+        self._system_temp = ""
+        self._windows_dir = ""
+        self._config_revision = -1
         self._reload_protected_paths()
+
+    def _ensure_current(self) -> None:
+        """Reload when settings changed (e.g. a new exclusion added on the Settings page),
+        so every long-lived SafetyEngine honours it without an app restart."""
+        if getattr(self.config, "revision", self._config_revision) != self._config_revision:
+            self._reload_protected_paths()
 
     def _reload_protected_paths(self) -> None:
         """Populate canonical protected paths from system and config."""
+        self._config_revision = getattr(self.config, "revision", 0)
         folders = get_known_folders()
+        self._windows_dir = folders.windows
+        self._system_temp = folders.system_temp
         dirs: Set[str] = set()
 
         # Core Windows OS Protected Roots
@@ -75,6 +88,8 @@ class ProtectedPathRegistry:
             dirs.add(folders.pictures)
         if folders.videos:
             dirs.add(folders.videos)
+        if getattr(folders, "music", ""):
+            dirs.add(folders.music)
         if folders.downloads:
             dirs.add(folders.downloads)
 
@@ -105,6 +120,7 @@ class ProtectedPathRegistry:
         if not target_path:
             return True
 
+        self._ensure_current()
         norm_target = normalize_path(target_path)
         base_name = os.path.basename(norm_target)
 
@@ -132,9 +148,9 @@ class ProtectedPathRegistry:
             if norm_target.startswith(p_prefix):
                 # Exception: Known safe subdirectories under C:\Windows (specifically Windows\Temp)
                 # If target is inside Windows\Temp, it is NOT blocked by the Windows directory protection
-                folders = get_known_folders()
-                if p_dir == folders.windows:
-                    if folders.system_temp and (norm_target.startswith(folders.system_temp + os.sep) or norm_target == folders.system_temp):
+                if p_dir == self._windows_dir:
+                    sys_temp = self._system_temp
+                    if sys_temp and (norm_target.startswith(sys_temp + os.sep) or norm_target == sys_temp):
                         continue
                 return True
 
@@ -142,6 +158,7 @@ class ProtectedPathRegistry:
 
     def get_protected_paths(self) -> List[str]:
         """Return list of all registered protected directories."""
+        self._ensure_current()
         return sorted(list(self._protected_directories))
 
     def reload(self) -> None:
@@ -169,6 +186,19 @@ class ProtectedPathRegistry:
             self.reload()
 
 
+_shared_registry: Optional[ProtectedPathRegistry] = None
+_shared_registry_lock = threading.Lock()
+
+
 def is_system_critical_path(path: str) -> bool:
-    """Convenience helper to check if a path is protected."""
-    return ProtectedPathRegistry().is_protected_path(path)
+    """
+    Convenience helper to check if a path is protected.
+    Uses one shared registry: building a registry resolves every known folder, and
+    this helper is called per directory during duplicate / leftover walks.
+    """
+    global _shared_registry
+    if _shared_registry is None:
+        with _shared_registry_lock:
+            if _shared_registry is None:
+                _shared_registry = ProtectedPathRegistry()
+    return _shared_registry.is_protected_path(path)

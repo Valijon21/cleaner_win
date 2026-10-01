@@ -32,17 +32,54 @@ class RiskEngine:
         self,
         protected_registry: Optional[ProtectedPathRegistry] = None,
         path_guard: Optional[PathGuard] = None,
-        min_age_hours: float = 24.0,
-        smart_pyinstaller_enabled: bool = True,
-        pyinstaller_min_age_hours: float = 24.0,
+        min_age_hours: Optional[float] = None,
+        smart_pyinstaller_enabled: Optional[bool] = None,
+        pyinstaller_min_age_hours: Optional[float] = None,
         pyinstaller_tracker: Optional[PyInstallerTracker] = None,
     ):
         self.protected = protected_registry or ProtectedPathRegistry()
         self.path_guard = path_guard or PathGuard(self.protected)
-        self.min_age_hours = min_age_hours
-        self.smart_pyinstaller_enabled = smart_pyinstaller_enabled
-        self.pyinstaller_min_age_hours = pyinstaller_min_age_hours
+        # Explicit arguments pin a value; None means "follow the user's settings live".
+        self._min_age_hours = min_age_hours
+        self._smart_pyinstaller_enabled = smart_pyinstaller_enabled
+        self._pyinstaller_min_age_hours = pyinstaller_min_age_hours
         self.pyinstaller_tracker = pyinstaller_tracker or PyInstallerTracker()
+
+    def _setting(self, key: str, default):
+        try:
+            return self.protected.config.get(key, default)
+        except Exception:
+            return default
+
+    @property
+    def min_age_hours(self) -> float:
+        if self._min_age_hours is not None:
+            return self._min_age_hours
+        return float(self._setting("min_file_age_hours", 24.0))
+
+    @min_age_hours.setter
+    def min_age_hours(self, value: Optional[float]) -> None:
+        self._min_age_hours = value
+
+    @property
+    def smart_pyinstaller_enabled(self) -> bool:
+        if self._smart_pyinstaller_enabled is not None:
+            return self._smart_pyinstaller_enabled
+        return bool(self._setting("smart_pyinstaller_cleanup", True))
+
+    @smart_pyinstaller_enabled.setter
+    def smart_pyinstaller_enabled(self, value: Optional[bool]) -> None:
+        self._smart_pyinstaller_enabled = value
+
+    @property
+    def pyinstaller_min_age_hours(self) -> float:
+        if self._pyinstaller_min_age_hours is not None:
+            return self._pyinstaller_min_age_hours
+        return float(self._setting("pyinstaller_min_age_hours", 24.0))
+
+    @pyinstaller_min_age_hours.setter
+    def pyinstaller_min_age_hours(self, value: Optional[float]) -> None:
+        self._pyinstaller_min_age_hours = value
 
     def evaluate(
         self,

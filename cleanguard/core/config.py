@@ -58,8 +58,15 @@ class ConfigManager:
         self._lock = threading.Lock()
         self.config_path = config_path or self._resolve_config_path()
         self._data: Dict[str, Any] = dict(DEFAULT_CONFIG)
+        # Incremented on every change so consumers (e.g. ProtectedPathRegistry)
+        # can cheaply detect that cached derived state is stale.
+        self._revision = 0
         self.load()
         self._initialized = True
+
+    @property
+    def revision(self) -> int:
+        return self._revision
 
     @staticmethod
     def _resolve_config_path() -> str:
@@ -83,18 +90,28 @@ class ConfigManager:
                         loaded = json.load(f)
                         if isinstance(loaded, dict):
                             self._data.update(loaded)
+                            self._revision += 1
                 except (OSError, IOError, ValueError):
                     pass
 
     def save(self) -> None:
-        """Persist configuration to disk."""
+        """Persist configuration to disk atomically (write temp file, then replace)."""
         with self._lock:
+            tmp_path = self.config_path + ".tmp"
             try:
                 os.makedirs(os.path.dirname(os.path.abspath(self.config_path)), exist_ok=True)
-                with open(self.config_path, "w", encoding="utf-8") as f:
+                with open(tmp_path, "w", encoding="utf-8") as f:
                     json.dump(self._data, f, indent=2, ensure_ascii=False)
+                    f.flush()
+                    os.fsync(f.fileno())
+                # A crash mid-write can no longer leave a truncated config.json
+                # (which load() would silently discard, resetting every setting).
+                os.replace(tmp_path, self.config_path)
             except (OSError, IOError):
-                pass
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
 
     def get(self, key: str, default: Any = None) -> Any:
         with self._lock:
@@ -103,6 +120,7 @@ class ConfigManager:
     def set(self, key: str, value: Any, auto_save: bool = True) -> None:
         with self._lock:
             self._data[key] = value
+            self._revision += 1
         if auto_save:
             self.save()
 

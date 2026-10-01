@@ -37,26 +37,22 @@ class PathGuard:
         if "\x00" in target_path:
             return False, ErrorCode.INVALID_PATH, "Path contains illegal null bytes."
 
-        # Canonicalize path
+        # Canonicalize path. normalize_path() resolves symlinks/junctions, so every
+        # containment check below runs against the real on-disk target.
         norm_path = normalize_path(target_path)
 
         # Path length check (MAX_PATH is 260 unless extended path syntax is used)
         if len(norm_path) > 32767:
             return False, ErrorCode.PATH_TOO_LONG, "Path exceeds maximum allowable length."
 
-        # Check traversal sequences attempting to escape
-        if ".." in target_path:
-            # Recheck after normalization
-            if not is_path_under_directory(norm_path, os.path.dirname(norm_path)):
-                return False, ErrorCode.INVALID_PATH, "Directory traversal sequence detected."
-
         # Hard Protected Paths Check
         if self.protected.is_protected_path(norm_path):
             return False, ErrorCode.PROTECTED_PATH, f"Path is under system or user protected location: {norm_path}"
 
-        # Reparse point / junction check
+        # Reparse point / junction check. This must inspect the literal path: the
+        # resolved path is the link *target*, which is never itself a reparse point.
         if not allow_reparse_points:
-            if is_reparse_point_or_junction(norm_path):
+            if is_reparse_point_or_junction(target_path) or is_reparse_point_or_junction(norm_path):
                 return False, ErrorCode.INVALID_REPARSE_POINT, "Target is a reparse point, junction, or symbolic link."
 
         # Boundary Root containment check

@@ -69,7 +69,9 @@ class DatabaseManager:
                     # Check schema version
                     cursor.execute("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1;")
                     row = cursor.fetchone()
-                    if not row:
+                    # Schema is additive (CREATE ... IF NOT EXISTS), so recording the
+                    # new version is the whole migration for existing databases.
+                    if not row or row[0] < CURRENT_SCHEMA_VERSION:
                         cursor.execute(
                             "INSERT INTO schema_version (version, applied_at) VALUES (?, ?);",
                             (CURRENT_SCHEMA_VERSION, time.time()),

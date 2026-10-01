@@ -10,7 +10,7 @@ from typing import Tuple, Optional
 from cleanguard.core.scanner.engine import ScannerEngine
 from cleanguard.core.cleaner.planner import CleanupPlanner
 from cleanguard.core.cleaner.executor import CleanupExecutor
-from cleanguard.core.contracts import RiskLevel, CleanupStrategy
+from cleanguard.core.contracts import CleanupStrategy
 from cleanguard.core.safety import SafetyEngine
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
@@ -160,9 +160,13 @@ class AutoCareScheduler:
         # 1. Scan default safe junk categories
         engine = ScannerEngine(safety_engine=safety_engine)
         summary, items = engine.scan_all()
+        try:
+            history_repo.record_scan_session(summary)
+        except Exception as ex:
+            logger.warning("Failed saving scan session to database: %s", ex)
 
-        # 2. Filter strictly RiskLevel.SAFE
-        safe_items = [it for it in items if it.risk_level == RiskLevel.SAFE]
+        # 2. Filter strictly RiskLevel.SAFE, never touching the Recycle Bin or privacy history unattended
+        safe_items = CleanupPlanner.select_unattended(items)
         logger.info("Auto-Care identified %d safe items (%d total items found).", len(safe_items), len(items))
 
         if not safe_items:
@@ -175,7 +179,7 @@ class AutoCareScheduler:
             default_strategy=CleanupStrategy.SAFE_DELETE,
         )
         executor = CleanupExecutor(safety_engine=safety_engine)
-        clean_summary = executor.execute(planned)
+        clean_summary = executor.execute(planned, scan_id=summary.scan_id)
 
         # 4. Record history session
         try:

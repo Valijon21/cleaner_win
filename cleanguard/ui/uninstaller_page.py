@@ -2,8 +2,6 @@
 Uninstaller Page: View installed applications, trigger official uninstallers, and clean residual leftovers.
 """
 
-import os
-import shutil
 from typing import List, Optional
 from PyQt5.QtWidgets import (
     QWidget,
@@ -24,6 +22,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from cleanguard.windows.uninstaller import AppUninstallerManager, InstalledApp
 from cleanguard.core.safety import SafetyEngine
+from cleanguard.core.cleaner.user_data import recycle_user_items
 from cleanguard.utils.formatting import format_bytes
 from cleanguard.localization import tr
 from cleanguard.utils.logging import get_logger
@@ -78,8 +77,10 @@ class LeftoversDialog(QDialog):
             item = QTreeWidgetItem(self.tree)
             item.setText(0, it.path)
             item.setText(1, format_bytes(it.size))
-            item.setText(2, tr("leftovers_safe_to_delete", "O'chirish xavfsiz"))
-            item.setCheckState(0, Qt.Checked)
+            item.setText(2, tr("leftovers_review", "Ko'rib chiqing"))
+            # Leftover detection is name-based, so nothing is pre-selected:
+            # the user confirms each folder explicitly.
+            item.setCheckState(0, Qt.Unchecked)
             item.setData(0, Qt.UserRole, it)
 
         layout.addWidget(self.tree)
@@ -101,31 +102,28 @@ class LeftoversDialog(QDialog):
         layout.addLayout(btn_row)
 
     def _on_clean(self) -> None:
-        deleted = 0
-        selected_count = 0
+        selected = []
         root = self.tree.invisibleRootItem()
         for i in range(root.childCount()):
             child = root.child(i)
             if child.checkState(0) == Qt.Checked:
-                selected_count += 1
                 it = child.data(0, Qt.UserRole)
-                if it and os.path.exists(it.path):
-                    if self.safety_engine.is_protected_path(it.path):
-                        continue
-                    try:
-                        if os.path.isdir(it.path):
-                            shutil.rmtree(it.path, ignore_errors=True)
-                        else:
-                            os.remove(it.path)
-                        deleted += 1
-                    except Exception as ex:
-                        logger.error("Failed cleaning leftover %s: %s", it.path, ex)
+                if it:
+                    selected.append(it)
 
-        if selected_count == 0:
+        if not selected:
             QMessageBox.warning(self, tr("msg_warning_title"), tr("leftovers_no_selection"))
             return
 
-        QMessageBox.information(self, tr("msg_success_title"), tr("leftovers_success_msg", count=deleted))
+        # Safety-gated and recoverable: leftovers are moved to the Recycle Bin.
+        result = recycle_user_items(
+            ((it.path, it.size) for it in selected),
+            safety_engine=self.safety_engine,
+        )
+        for path, reason in result.rejected + result.failed:
+            logger.warning("Leftover not removed %s: %s", path, reason)
+
+        QMessageBox.information(self, tr("msg_success_title"), tr("leftovers_success_msg", count=len(result.removed)))
         self.accept()
 
 

@@ -40,7 +40,6 @@ class HistoryRepository:
                     summary.blocked_items,
                 ),
             )
-            conn.commit()
 
     def record_cleanup_session(self, summary: CleanupSummary, status: str = "COMPLETED") -> None:
         """Persist a cleanup session and all itemized audit records."""
@@ -57,11 +56,19 @@ class HistoryRepository:
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         with self.db.session() as conn:
+            # cleanup_sessions.scan_id is a foreign key. Cleanups started outside a
+            # recorded scan (Smart Care, failed scan persistence) must still be
+            # audited, so an unknown scan_id is stored as NULL instead of raising.
+            scan_id = summary.scan_id
+            if scan_id is not None:
+                exists = conn.execute("SELECT 1 FROM scan_sessions WHERE id = ?;", (scan_id,)).fetchone()
+                if not exists:
+                    scan_id = None
             conn.execute(
                 session_sql,
                 (
                     summary.cleanup_id,
-                    summary.scan_id,
+                    scan_id,
                     summary.started_at,
                     summary.finished_at,
                     status,
@@ -73,9 +80,9 @@ class HistoryRepository:
             )
 
             # Insert audit items
-            for item in summary.item_results:
-                conn.execute(
-                    item_sql,
+            conn.executemany(
+                item_sql,
+                [
                     (
                         item.id or str(uuid.uuid4()),
                         summary.cleanup_id,
@@ -86,8 +93,10 @@ class HistoryRepository:
                         item.size,
                         item.error_code.value,
                         item.error_message,
-                    ),
-                )
+                    )
+                    for item in summary.item_results
+                ],
+            )
 
             # Update cumulative statistics
             conn.execute(
@@ -110,8 +119,6 @@ class HistoryRepository:
                 """,
                 (float(summary.files_deleted), time.time()),
             )
-
-            conn.commit()
 
     def get_cleanup_history(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Retrieve recent cleanup sessions."""

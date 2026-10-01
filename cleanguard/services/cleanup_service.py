@@ -11,6 +11,7 @@ from cleanguard.core.contracts import ScanItem, CleanupStrategy
 from cleanguard.core.safety import SafetyEngine
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
+from cleanguard.windows.restore_point import create_restore_point
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("cleanup_service")
@@ -29,12 +30,14 @@ class CleanupWorker(QThread):
         strategy: CleanupStrategy = CleanupStrategy.SAFE_DELETE,
         safety_engine: Optional[SafetyEngine] = None,
         db_manager: Optional[DatabaseManager] = None,
+        create_restore_point: bool = False,
         parent=None,
     ):
         super().__init__(parent)
         self.raw_items = items_to_clean
         self.scan_id = scan_id
         self.strategy = strategy
+        self.create_restore_point = create_restore_point
         self.safety_engine = safety_engine or SafetyEngine()
         self.history_repo = HistoryRepository(db_manager or DatabaseManager())
         self.cancel_token = CancellationToken()
@@ -46,6 +49,15 @@ class CleanupWorker(QThread):
     def run(self) -> None:
         try:
             self.cancel_token.reset()
+
+            # 0. Optional System Restore snapshot. Done here, not on the GUI thread:
+            # SRSetRestorePointW / Checkpoint-Computer can block for 30+ seconds.
+            if self.create_restore_point:
+                try:
+                    ok, msg = create_restore_point("CleanGuard Pre-Clean Snapshot")
+                    logger.info(f"Restore point: {msg}" if ok else f"Restore point skipped: {msg}")
+                except Exception as exc:
+                    logger.debug(f"Restore point creation failed: {exc}")
 
             # 1. Plan and vet items
             planned_items, _ = CleanupPlanner.build_plan(
@@ -75,5 +87,5 @@ class CleanupWorker(QThread):
 
             self.finished.emit(summary)
         except Exception as exc:
-            logger.error(f"Cleanup worker encountered failure: {exc}")
+            logger.error(f"Cleanup worker encountered failure: {exc}", exc_info=True)
             self.error.emit(str(exc))

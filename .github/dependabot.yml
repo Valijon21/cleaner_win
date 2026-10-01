@@ -1,0 +1,12 @@
+# Keeps the CI actions current (e.g. runtime deprecations like Node 20 -> 24)
+# by opening a PR when a new version is released.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

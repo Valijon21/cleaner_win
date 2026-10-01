@@ -149,8 +149,11 @@ class TweaksPage(QWidget):
         p_layout.setSpacing(14)
 
         lbl_desc = QLabel(
-            "Microsoft ga ma'lumot yuborish, diagnostika telemetriyasi va shaxsiy tavsiyalarni o'chirish orqali "
-            "tizim tezligini hamda shaxsiy daxlsizlikni oshiring."
+            tr(
+                "tweaks_privacy_desc",
+                "Microsoft ga ma'lumot yuborish, diagnostika telemetriyasi va shaxsiy tavsiyalarni o'chirish orqali "
+                "tizim tezligini hamda shaxsiy daxlsizlikni oshiring.",
+            )
         )
         lbl_desc.setStyleSheet("color: #9CA3AF; font-size: 12px; line-height: 1.4;")
         lbl_desc.setWordWrap(True)
@@ -173,8 +176,11 @@ class TweaksPage(QWidget):
         b_layout.setSpacing(12)
 
         lbl_info = QLabel(
-            "Windows bilan birga avtomatik o'rnatilgan, fonga yuk bo'luvchi AppX paketlarini xavfsiz o'chirish. "
-            "CleanGuard tizim do'koni (Store) va xavfsizlik komponentlariga tegmaydi."
+            tr(
+                "tweaks_bloat_desc",
+                "Windows bilan birga avtomatik o'rnatilgan, fonga yuk bo'luvchi AppX paketlarini xavfsiz o'chirish. "
+                "CleanGuard tizim do'koni (Store) va xavfsizlik komponentlariga tegmaydi.",
+            )
         )
         lbl_info.setStyleSheet("color: #9CA3AF; font-size: 12px;")
         lbl_info.setWordWrap(True)
@@ -182,7 +188,12 @@ class TweaksPage(QWidget):
 
         self.table_bloatware = QTableWidget()
         self.table_bloatware.setColumnCount(4)
-        self.table_bloatware.setHorizontalHeaderLabels(["Ilova nomi", "Kategoriya", "Holati", "Amal"])
+        self.table_bloatware.setHorizontalHeaderLabels([
+            tr("col_app_name", "Ilova nomi"),
+            tr("col_category", "Kategoriya"),
+            tr("col_status", "Holati"),
+            tr("col_action", "Amal"),
+        ])
         self.table_bloatware.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table_bloatware.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table_bloatware.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -269,7 +280,7 @@ class TweaksPage(QWidget):
         u2_layout.addWidget(self.lbl_dism_desc)
 
         row_dism = QHBoxLayout()
-        self.lbl_dism_status = QLabel("Windows DISM: Tayyor")
+        self.lbl_dism_status = QLabel(tr("dism_ready", "Windows DISM: Tayyor"))
         self.lbl_dism_status.setStyleSheet("font-size: 13px; color: #D1D5DB;")
         row_dism.addWidget(self.lbl_dism_status)
         row_dism.addStretch()
@@ -324,9 +335,9 @@ class TweaksPage(QWidget):
 
             info_layout = QVBoxLayout()
             info_layout.setSpacing(4)
-            lbl_name = QLabel(tweak.name)
+            lbl_name = QLabel(tweak.display_name)
             lbl_name.setStyleSheet("font-size: 14px; font-weight: 600; color: #F9FAFB;")
-            lbl_desc = QLabel(tweak.description)
+            lbl_desc = QLabel(tweak.display_description)
             lbl_desc.setStyleSheet("font-size: 12px; color: #9CA3AF;")
             lbl_desc.setWordWrap(True)
             info_layout.addWidget(lbl_name)
@@ -335,7 +346,7 @@ class TweaksPage(QWidget):
 
             # State switch / checkbox
             is_applied = self.manager.is_tweak_applied(tweak)
-            chk = QCheckBox("Himoyalangan" if is_applied else "O'chiq (Standart)")
+            chk = QCheckBox(tr("tweak_on", "Himoyalangan") if is_applied else tr("tweak_off", "O'chiq (standart)"))
             chk.setChecked(is_applied)
             chk.setCursor(Qt.PointingHandCursor)
             chk.setStyleSheet("""
@@ -357,7 +368,10 @@ class TweaksPage(QWidget):
             reply = QMessageBox.question(
                 self,
                 tr("msg_admin_required", "Administrator huquqi talab qilinadi"),
-                tr("msg_admin_restart_prompt", f"'{tweak.name}' parametrini o'zgartirish uchun Administrator huquqi zarur.\nCleanGuard ni Administrator rejimida qayta ishga tushirilsinmi?"),
+                f"{tweak.display_name}\n\n" + tr(
+                    "msg_admin_restart_prompt",
+                    "Ushbu parametrni o'zgartirish uchun Administrator huquqi zarur.\nCleanGuard ni Administrator rejimida qayta ishga tushirilsinmi?",
+                ),
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.Yes,
             )
@@ -371,7 +385,7 @@ class TweaksPage(QWidget):
 
         ok, msg = self.manager.apply_tweak(tweak, enable)
         if ok:
-            chk.setText("Himoyalangan" if enable else "O'chiq (Standart)")
+            chk.setText(tr("tweak_on", "Himoyalangan") if enable else tr("tweak_off", "O'chiq (standart)"))
         else:
             chk.blockSignals(True)
             chk.setChecked(not enable)
@@ -399,26 +413,26 @@ class TweaksPage(QWidget):
 
             for row, app in enumerate(self.bloatware_apps):
                 # Name
-                self.table_bloatware.setItem(row, 0, QTableWidgetItem(f"  {app.name}"))
+                self.table_bloatware.setItem(row, 0, QTableWidgetItem(f"  {app.display_name}"))
 
                 # Category
-                item_cat = QTableWidgetItem(app.category)
+                item_cat = QTableWidgetItem(tr(f"bloat_cat_{app.category.lower()}", app.category))
                 item_cat.setTextAlignment(Qt.AlignCenter)
                 self.table_bloatware.setItem(row, 1, item_cat)
 
                 # Status
                 if app.installed:
-                    item_stat = QTableWidgetItem("⚠️ O'rnatilgan")
+                    item_stat = QTableWidgetItem(tr("bloat_installed", "⚠️ O'rnatilgan"))
                     item_stat.setForeground(Qt.yellow)
                 else:
-                    item_stat = QTableWidgetItem("✅ Mavjud emas")
+                    item_stat = QTableWidgetItem(tr("bloat_absent", "✅ Mavjud emas"))
                     item_stat.setForeground(Qt.gray)
                 item_stat.setTextAlignment(Qt.AlignCenter)
                 self.table_bloatware.setItem(row, 2, item_stat)
 
                 # Action button
                 if app.installed:
-                    btn_remove = QPushButton("🗑️ O'chirish")
+                    btn_remove = QPushButton(tr("btn_remove", "🗑️ O'chirish"))
                     btn_remove.setStyleSheet("""
                         QPushButton {
                             background-color: #EF4444;
@@ -436,7 +450,7 @@ class TweaksPage(QWidget):
                     btn_remove.clicked.connect(lambda _, a=app: self._on_remove_bloatware_clicked(a))
                     self.table_bloatware.setCellWidget(row, 3, btn_remove)
                 else:
-                    lbl_clean = QLabel("Toza")
+                    lbl_clean = QLabel(tr("bloat_clean", "Toza"))
                     lbl_clean.setAlignment(Qt.AlignCenter)
                     lbl_clean.setStyleSheet("color: #6B7280; font-size: 11px;")
                     self.table_bloatware.setCellWidget(row, 3, lbl_clean)
@@ -502,7 +516,7 @@ class TweaksPage(QWidget):
 
     def _on_dism_finished(self, success: bool, message: str) -> None:
         self.btn_run_dism.setEnabled(True)
-        self.lbl_dism_status.setText("Windows DISM: Tayyor")
+        self.lbl_dism_status.setText(tr("dism_ready", "Windows DISM: Tayyor"))
         if success:
             QMessageBox.information(
                 self,

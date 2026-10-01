@@ -6,9 +6,10 @@ and executing official Microsoft DISM Component Store cleanup.
 
 import os
 import subprocess
-from typing import Tuple, Optional, Dict, Any
+from typing import Tuple, Optional
 from cleanguard.windows.privileges import is_user_admin
 from cleanguard.utils.logging import get_logger
+from cleanguard.localization import tr
 
 logger = get_logger("windows.updates")
 
@@ -57,7 +58,7 @@ class WindowsUpdateCleaner:
         Requires Administrator privileges.
         """
         if check_admin and not is_user_admin():
-            return False, 0, "Administrator privileges required to clean Windows Update download cache."
+            return False, 0, tr("upd_admin_cache", "Windows Update keshini tozalash uchun Administrator huquqi talab qilinadi.")
 
         bytes_reclaimed = 0
         errors = []
@@ -97,7 +98,7 @@ class WindowsUpdateCleaner:
         Reclaims gigabytes of superseded Windows Update service packs and manifests.
         """
         if not is_user_admin():
-            return False, "Administrator privileges required to run DISM Component Store cleanup."
+            return False, tr("upd_admin_dism", "DISM tozalashni ishga tushirish uchun Administrator huquqi talab qilinadi.")
 
         try:
             cmd = ["dism.exe", "/Online", "/Cleanup-Image", "/StartComponentCleanup"]
@@ -109,12 +110,12 @@ class WindowsUpdateCleaner:
 
             if proc.returncode == 0:
                 logger.info("DISM Component Cleanup completed successfully.")
-                return True, "DISM Component Store cleanup completed successfully."
+                return True, tr("upd_dism_ok", "DISM komponentlar omborini tozalash muvaffaqiyatli yakunlandi.")
             else:
                 err_text = " ".join(filter(None, [proc.stdout.strip(), proc.stderr.strip()])) or f"DISM returned code {proc.returncode}"
                 logger.error("DISM Component Cleanup failed: %s", err_text)
                 return False, err_text
         except subprocess.TimeoutExpired:
-            return False, "DISM Component Cleanup timed out after 10 minutes."
+            return False, tr("upd_dism_timeout", "DISM tozalash 10 daqiqada tugamadi (timeout).")
         except Exception as e:
-            return False, f"Unexpected error executing DISM: {e}"
+            return False, tr("upd_dism_error", "DISM ishga tushirishda kutilmagan xatolik: {error}", error=e)

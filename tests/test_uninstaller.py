@@ -2,7 +2,7 @@
 Unit tests for Windows AppUninstallerManager.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from cleanguard.windows.uninstaller import AppUninstallerManager, InstalledApp
 from cleanguard.core.contracts import RiskLevel
 

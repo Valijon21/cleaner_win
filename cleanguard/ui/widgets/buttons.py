@@ -4,7 +4,7 @@ Inspired by IObit Advanced SystemCare Pro.
 """
 
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QLabel
-from PyQt5.QtGui import QPainter, QRadialGradient, QLinearGradient, QColor, QPen, QBrush
+from PyQt5.QtGui import QPainter, QRadialGradient, QColor, QPen, QBrush
 from PyQt5.QtCore import Qt, QPointF, QRectF
 from cleanguard.localization import tr
 

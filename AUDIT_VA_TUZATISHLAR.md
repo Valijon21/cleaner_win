@@ -3,7 +3,7 @@
 **Sana:** 2026-10-01
 **Ko'lam:** `cleanguard/` (Python 3.8+ / PyQt5 / Win32 ctypes / SQLite), testlar, sozlamalar oqimi
 **Natija:** 25 ta tasdiqlangan muammo **tuzatildi**, yana 10 tasi keyingi bosqich rejasiga kiritildi (5-bo'lim), 18 ta yangi regressiya testi qo'shildi.
-**Testlar:** `159 passed` (avval 141; 139 eski + 2 yangilangan + 18 yangi)
+**Testlar:** `177 passed` (avval 141 ta edi)
 
 > Har bir topilma kodni o'qib va (imkon bo'lgan joyda) real Windows'da ishga tushirib tasdiqlangan.
 > Mavjud `AUDIT_REPORT.md` dan mustaqil tarzda tekshirildi.
@@ -106,17 +106,38 @@ QT_QPA_PLATFORM=offscreen python -m pytest -q
 
 ---
 
-## 5. Keyingi bosqichlar uchun reja (tuzatilmagan)
+## 5. Ikkinchi bosqich (bajarildi)
 
-| Ustuvorlik | Vazifa | Sabab |
-|-----------|--------|-------|
-| Yuqori | `ScanItem`ga skaner `allowed_roots`ini saqlash va `verify_cleanup_target`ga uzatish | Hozir o'chirish paytida chegara (boundary) tekshiruvi ishlatilmaydi; himoyalangan yo'llar tekshiruvi asosiy himoya |
-| Yuqori | Bitta nusxa (single-instance) himoyasi (`QLockFile`) | Ikki nusxa bir vaqtda tozalashi mumkin |
-| Yuqori | `tweaks_page` bloatware worker'ini `terminate()` o'rniga kooperativ bekor qilish | `QThread.terminate()` jarayonni yarim holatda qoldirishi mumkin |
-| O'rta | UI'dagi qattiq yozilgan o'zbekcha matnlar (scheduler xabarlari, katta fayllar tooltip'lari, nav bo'limlari) → `tr()` | en/ru interfeysida aralash til |
-| O'rta | CI'ga `ruff`/`pyflakes` qo'shish; 37 ta ishlatilmagan import, 2 ta bo'sh f-string | Kod sifati |
-| O'rta | O'lik kod: `ignored_paths` (config kaliti va DB jadvali) ishlatilmaydi | Chalkashlik |
-| O'rta | Qoldiqlar: ilova hali o'rnatilganmi — tekshirish | Uninstall bekor qilinsa ham qoldiq taklif qilinadi |
-| Past | MuiCache: ulanmagan disk/tarmoqdagi yo'llarni "xato" deb belgilamaslik | Noto'g'ri ijobiy natijalar |
-| Past | `.reg` zaxirada `REG_EXPAND_SZ` / `REG_BINARY` turlarini to'g'ri yozish | Tiklash aniqligi |
-| Past | DB uchun haqiqiy migratsiya mexanizmi (hozircha faqat additive sxema) | Kelajakdagi o'zgarishlar |
+| Vazifa | Natija |
+|--------|--------|
+| O'chirishda skaner chegarasini qayta tekshirish | `ScanItem.allowed_roots` → `verify_cleanup_target`. Real skanda 1794 ta SAFE elementning hammasiga chegara biriktirildi; 400 ta tekshirilganidan birortasi ham noto'g'ri rad etilmadi |
+| Bitta nusxa himoyasi | `app/single_instance.py` (`QLockFile` + `QLocalServer`): ikkinchi ishga tushirish mavjud oynani ochadi; Auto-Care GUI ishlayotganda o'tkazib yuboriladi; admin sifatida qayta ishga tushirishda 8 s kutadi |
+| `QThread.terminate()` o'rniga kooperativ to'xtatish | Barcha worker'lar `cancel()` + `requestInterruption()` + umumiy kutish muddati bilan to'xtatiladi; Tozalash/Smart Care/DISM ishlayotganda dasturni yopishga ruxsat berilmaydi (thread ishlab turganda o'chirilib qulashining oldi olindi) |
+| Yashirin xato | Yopishda katta fayllar worker'i noto'g'ri atribut nomi (`_scan_worker`) tufayli umuman to'xtatilmas edi |
+| `.exe` build | `scripts/build.py` → `dist/CleanGuard.exe` (39.8 MB). Ishga tushirildi; ikkinchi nusxa birinchisini faollashtirib, kod 0 bilan chiqdi |
+
+## 6. Uchinchi bosqich (bajarildi)
+
+| Vazifa | Natija |
+|--------|--------|
+| Lokalizatsiya | ~120 ta qattiq yozilgan matn `tr()` ga o'tkazildi (UI va Windows servis xabarlari); tweaks/bloatware katalogi `display_name`/`display_description` orqali jonli tarjima qilinadi; avvaldan **hech bir tilda bo'lmagan** 31 ta kalit qo'shildi. Jami 559 kalit, uz/en/ru to'plamlari va `{placeholder}` lari bir xil |
+| i18n nazorati | `tests/test_translations_complete.py`: koddagi har bir `tr("kalit")` 3 tilda mavjudligi va placeholder mosligi CI'da tekshiriladi |
+| Kod sifati | `ruff.toml` + CI'da `ruff check .`; 62 ta topilma tuzatildi (ishlatilmagan import, bo'sh f-string, keraksiz o'zgaruvchi) |
+| O'lik kod | `ignored_paths` config kaliti olib tashlandi, DB jadvali v3 migratsiyasida o'chiriladi |
+| DB migratsiyalari | `schema.py`: o'zgarmas v1 bazasi + raqamlangan `MIGRATIONS`; har biri alohida tranzaksiyada, xato bo'lsa to'liq orqaga qaytariladi. Testlar: yangi baza, eski v1 bazani ma'lumot bilan yangilash, idempotentlik, atomik rollback |
+| Qoldiqlar | Dastur hali o'rnatilgan bo'lsa (uninstall bekor qilingan/tugamagan), qoldiq qidirish rad etiladi (`is_app_installed`) |
+| MuiCache | Tarmoq (UNC) va hozir ulanmagan disklardagi yo'llar endi "o'chirilgan ilova" deb belgilanmaydi |
+| `.reg` zaxira | `format_reg_value`: SZ, EXPAND_SZ, MULTI_SZ, DWORD, QWORD, BINARY, default qiymat va boshqa turlar regedit formatida; qator oxiridagi ikki karra CR (CR CR LF) xatosi tuzatildi. Haqiqiy `reg import` bilan qaytarib tiklash testi barcha turlarda o'tdi |
+| Qo'shimcha topilma | Sozlamalardagi "Auto-Care sinovi" haqiqiy tozalashni **tasdiqsiz va UI oqimida** bajarardi — endi tasdiq so'raydi, fon oqimida ishlaydi va ishlayotganda dasturni yopish bloklanadi |
+| Testlar o'zbek tiliga bog'liq edi | `conftest.py` har test uchun tilni belgilaydi (foydalanuvchining haqiqiy `config.json` iga yozmasdan) |
+
+**Testlar:** `177 passed`. Dastur uz/en/ru tillarida ochilib, barcha 16 sahifa xatosiz aylanib chiqildi.
+
+## 7. Qolgan ishlar (kod tashqarisida)
+
+| Vazifa | Izoh |
+|--------|------|
+| GUI'ni qo'lda sinash | Skan → tozalash, dublikat/katta fayl/qoldiq (Savatga tushishi), Smart Care, admin rejimi |
+| Inno Setup o'rnatuvchisini toza kompyuterda sinash | `installer/cleanguard_setup.iss` |
+| Kod imzolash (code signing) | Imzosiz tozalovchi dasturlarni SmartScreen/antiviruslar bloklaydi |
+| Diagnostika oynasi (log viewer) va crash dialog | Dasturchi uchun mo'ljallangan, hozircha faqat inglizcha |

@@ -4,13 +4,13 @@ Provides inspection and management of built-in AppX packages and system privacy/
 Safe by design: Never removes critical system packages (Store, Shell, Windows Security).
 """
 
-import os
 import sys
 import subprocess
 from dataclasses import dataclass
-from typing import List, Dict, Any, Tuple, Optional, Set
+from typing import List, Any, Tuple, Set
 from cleanguard.windows.privileges import is_user_admin
 from cleanguard.utils.logging import get_logger
+from cleanguard.localization import tr
 
 logger = get_logger("windows.tweaks")
 
@@ -36,6 +36,15 @@ class PrivacyTweak:
     default_value: Any  # Default Windows value
     requires_admin: bool = False
 
+    # name/description are the Uzbek source strings; display_* follow the UI language live.
+    @property
+    def display_name(self) -> str:
+        return tr(f"tweak_{self.id}_name", self.name)
+
+    @property
+    def display_description(self) -> str:
+        return tr(f"tweak_{self.id}_desc", self.description)
+
 
 @dataclass
 class BloatwareApp:
@@ -46,6 +55,14 @@ class BloatwareApp:
     description: str
     category: str  # "Entertainment", "Microsoft", "Gaming"
     installed: bool = False
+
+    @property
+    def display_name(self) -> str:
+        return tr(f"bloat_{self.id}_name", self.name)
+
+    @property
+    def display_description(self) -> str:
+        return tr(f"bloat_{self.id}_desc", self.description)
 
 
 # Curated list of safe privacy and telemetry tweaks
@@ -253,10 +270,10 @@ class TweaksManager:
         If enable_protection=False, writes default_value (Windows default).
         """
         if winreg is None or sys.platform != "win32":
-            return False, "Not supported on non-Windows platform."
+            return False, tr("not_supported_platform", "Bu platformada qo'llab-quvvatlanmaydi.")
 
         if tweak.requires_admin and not is_user_admin():
-            return False, "Ushbu parametrni o'zgartirish uchun Administrator huquqi talab qilinadi."
+            return False, tr("admin_required_setting", "Ushbu parametrni o'zgartirish uchun Administrator huquqi talab qilinadi.")
 
         target_value = tweak.protect_value if enable_protection else tweak.default_value
 
@@ -264,10 +281,10 @@ class TweaksManager:
             with winreg.CreateKeyEx(tweak.hive, tweak.sub_key, 0, winreg.KEY_SET_VALUE) as key:
                 winreg.SetValueEx(key, tweak.value_name, 0, tweak.value_type, target_value)
             logger.info("Tweak '%s' set to %s successfully.", tweak.id, target_value)
-            return True, "Muvaffaqiyatli saqlandi."
+            return True, tr("saved_ok", "Muvaffaqiyatli saqlandi.")
         except PermissionError:
             logger.warning("Permission denied writing registry tweak %s", tweak.id)
-            return False, "Ruxsat yetarli emas. CleanGuard ni Administrator sifatida ishga tushiring."
+            return False, tr("access_denied_run_admin", "Ruxsat yetarli emas. CleanGuard ni Administrator sifatida ishga tushiring.")
         except Exception as ex:
             logger.error("Error setting tweak %s: %s", tweak.id, ex)
             return False, str(ex)
@@ -330,7 +347,7 @@ class TweaksManager:
         Uninstall an AppX package using PowerShell Remove-AppxPackage.
         """
         if sys.platform != "win32":
-            return False, "Not supported on non-Windows platform."
+            return False, tr("not_supported_platform", "Bu platformada qo'llab-quvvatlanmaydi.")
 
         logger.info("Uninstalling bloatware package %s...", app.package_pattern)
         cmd = [
@@ -350,12 +367,12 @@ class TweaksManager:
             )
             if proc.returncode == 0:
                 logger.info("Successfully removed %s", app.name)
-                return True, f"'{app.name}' muvaffaqiyatli o'chirildi."
+                return True, tr("bloat_removed", "'{name}' muvaffaqiyatli o'chirildi.", name=app.display_name)
             else:
-                err = proc.stderr.strip() or proc.stdout.strip() or "Noma'lum xatolik"
+                err = proc.stderr.strip() or proc.stdout.strip() or tr("unknown_error", "Noma'lum xatolik")
                 logger.warning("Failed removing %s: %s", app.name, err)
-                return False, f"O'chirishda xatolik: {err}"
+                return False, tr("delete_error", "O'chirishda xatolik: {error}", error=err)
         except subprocess.TimeoutExpired:
-            return False, "Jarayon vaqti tugadi (Timeout)."
+            return False, tr("process_timeout", "Jarayon vaqti tugadi (Timeout).")
         except Exception as ex:
             return False, str(ex)

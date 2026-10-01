@@ -3,7 +3,6 @@ Tests for Safe Registry Cleaner and Rollback Engine.
 """
 
 import os
-import pytest
 from unittest.mock import patch, MagicMock
 from cleanguard.windows.registry_cleaner import SafeRegistryCleaner, RegistryIssue
 

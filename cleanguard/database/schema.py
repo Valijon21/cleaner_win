@@ -1,10 +1,16 @@
 """
-Database Schema and Table Definitions for CleanGuard.
+Database Schema and Migrations for CleanGuard.
+
+BASE_SCHEMA_SQL is the original (version 1) schema and must never change.
+Every later change is appended to MIGRATIONS under the next version number;
+DatabaseManager applies the pending ones in order, each in its own transaction.
 """
 
-CURRENT_SCHEMA_VERSION = 2
+from typing import Dict, List
 
-CREATE_TABLES_SQL = """
+BASE_SCHEMA_VERSION = 1
+
+BASE_SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS schema_version (
     version INTEGER PRIMARY KEY,
     applied_at REAL NOT NULL
@@ -54,16 +60,21 @@ CREATE TABLE IF NOT EXISTS statistics (
     metric_value REAL NOT NULL,
     updated_at REAL NOT NULL
 );
-
-CREATE TABLE IF NOT EXISTS ignored_paths (
-    id TEXT PRIMARY KEY,
-    path TEXT UNIQUE NOT NULL,
-    reason TEXT,
-    created_at REAL NOT NULL
-);
-
--- v2: History page queries sort sessions by time and load items per session.
-CREATE INDEX IF NOT EXISTS idx_cleanup_items_cleanup_id ON cleanup_items(cleanup_id);
-CREATE INDEX IF NOT EXISTS idx_cleanup_sessions_started_at ON cleanup_sessions(started_at);
-CREATE INDEX IF NOT EXISTS idx_scan_sessions_started_at ON scan_sessions(started_at);
 """
+
+# version -> statements. Keep them idempotent (IF [NOT] EXISTS): version 2 was
+# first shipped inside the base script, so some databases already contain it.
+MIGRATIONS: Dict[int, List[str]] = {
+    2: [
+        # History page sorts sessions by time and loads items per session.
+        "CREATE INDEX IF NOT EXISTS idx_cleanup_items_cleanup_id ON cleanup_items(cleanup_id);",
+        "CREATE INDEX IF NOT EXISTS idx_cleanup_sessions_started_at ON cleanup_sessions(started_at);",
+        "CREATE INDEX IF NOT EXISTS idx_scan_sessions_started_at ON scan_sessions(started_at);",
+    ],
+    3: [
+        # Never used: user exclusions live in the "custom_protected_paths" setting.
+        "DROP TABLE IF EXISTS ignored_paths;",
+    ],
+}
+
+CURRENT_SCHEMA_VERSION = max(MIGRATIONS) if MIGRATIONS else BASE_SCHEMA_VERSION

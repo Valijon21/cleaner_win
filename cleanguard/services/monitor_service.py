@@ -4,10 +4,9 @@ Strictly compatible with Windows 7 SP1 through Windows 11.
 """
 
 import time
-from typing import Dict, Optional, Set
+from typing import Dict, Set
 from PyQt5.QtCore import QThread, pyqtSignal
 from cleanguard.windows.drives import enumerate_drives
-from cleanguard.core.contracts import DriveInfo
 from cleanguard.utils.logging import get_logger
 
 logger = get_logger("monitor_service")

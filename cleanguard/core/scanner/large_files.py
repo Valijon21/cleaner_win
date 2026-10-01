@@ -5,12 +5,9 @@ categorizes them by media/archive/installer type, and integrates with SafetyEngi
 """
 
 import os
-import time
 from dataclasses import dataclass
-from typing import List, Optional, Set, Callable
+from typing import List, Optional, Callable
 from cleanguard.security.protected_paths import ProtectedPathRegistry, HARD_PROTECTED_FILENAMES
-from cleanguard.utils.filesystem import normalize_path
-from cleanguard.windows.drives import enumerate_drives
 from cleanguard.windows.shell import is_reparse_point_or_junction
 from cleanguard.utils.logging import get_logger
 

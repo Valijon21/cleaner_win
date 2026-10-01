@@ -2,7 +2,7 @@
 Uninstaller Page: View installed applications, trigger official uninstallers, and clean residual leftovers.
 """
 
-from typing import List, Optional
+from typing import List
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
     QLineEdit,
-    QFrame,
     QMessageBox,
     QDialog,
     QTreeWidget,
@@ -179,7 +178,7 @@ class UninstallerPage(QWidget):
         self.txt_search.textChanged.connect(self._apply_filter)
         filter_row.addWidget(self.txt_search)
 
-        self.lbl_count = QLabel(f"Jami: 0 ta dastur")
+        self.lbl_count = QLabel(tr("uninst_total", "Jami: {count} ta dastur", count=0))
         self.lbl_count.setStyleSheet("color: #9CA3AF; font-size: 13px; margin-left: 12px;")
         filter_row.addWidget(self.lbl_count)
         layout.addLayout(filter_row)
@@ -208,7 +207,7 @@ class UninstallerPage(QWidget):
     def refresh_apps(self) -> None:
         self._loaded = True
         self.apps = self.manager.get_installed_apps()
-        self.lbl_count.setText(f"Jami: {len(self.apps)} ta dastur")
+        self.lbl_count.setText(tr("uninst_total", "Jami: {count} ta dastur", count=len(self.apps)))
         self._populate_table(self.apps)
 
     def _apply_filter(self) -> None:
@@ -294,6 +293,20 @@ class UninstallerPage(QWidget):
                 )
 
     def _on_leftovers_clicked(self, app: InstalledApp) -> None:
+        # Leftovers only exist once the uninstaller has actually removed the app
+        # (it may have been cancelled, or still be running).
+        if self.manager.is_app_installed(app):
+            QMessageBox.information(
+                self,
+                tr("msg_info_title", "Ma'lumot"),
+                tr(
+                    "leftovers_app_still_installed",
+                    "\"{app}\" hali o'rnatilgan. Qoldiqlarni qidirishdan oldin dasturni o'chiring va ro'yxatni yangilang.",
+                    app=app.name,
+                ),
+            )
+            return
+
         leftovers = self.manager.find_leftovers(app.name, app.publisher)
         if not leftovers:
             QMessageBox.information(
@@ -311,7 +324,7 @@ class UninstallerPage(QWidget):
         self.lbl_subtitle.setText(tr("uninstaller_subtitle", "O'rnatilgan dasturlarni to'liq o'chiring va qoldiqlarini tozalang"))
         self.btn_refresh.setText("🔄 " + tr("btn_refresh", "Yangilash"))
         self.txt_search.setPlaceholderText("🔍 " + tr("search_placeholder", "Dastur yoki noshir nomini qidiring..."))
-        self.lbl_count.setText(f"Jami: {len(self.apps)} ta dastur")
+        self.lbl_count.setText(tr("uninst_total", "Jami: {count} ta dastur", count=len(self.apps)))
         self.table.setHorizontalHeaderLabels([
             tr("tbl_app_name", "Dastur nomi"),
             tr("tbl_publisher", "Noshir"),

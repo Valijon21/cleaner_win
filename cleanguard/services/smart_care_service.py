@@ -10,7 +10,7 @@ Sequentially coordinates:
 
 import time
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from cleanguard.core.scanner.engine import ScannerEngine

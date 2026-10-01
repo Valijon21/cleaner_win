@@ -83,6 +83,9 @@ class ScanItem:
     is_junction: bool = False
     is_deletable: bool = False
     selected: bool = False
+    # Directory roots the producing scanner was authorised to scan. The cleanup
+    # gate re-checks containment against them right before deletion (TOCTOU).
+    allowed_roots: Optional[List[str]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert item to serializable dictionary."""
@@ -101,6 +104,7 @@ class ScanItem:
             "is_junction": self.is_junction,
             "is_deletable": self.is_deletable,
             "selected": self.selected,
+            "allowed_roots": list(self.allowed_roots) if self.allowed_roots else None,
         }
 
 

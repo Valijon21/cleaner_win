@@ -4,7 +4,6 @@ Unit tests for Large Files Finder and Safety Protection.
 
 import os
 from unittest.mock import patch
-import pytest
 from cleanguard.core.scanner.large_files import LargeFileScanner, LargeFileItem
 
 

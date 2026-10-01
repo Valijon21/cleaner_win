@@ -15,6 +15,7 @@ from cleanguard.security.protected_paths import is_system_critical_path
 from cleanguard.utils.filesystem import safe_stat, normalize_path
 from cleanguard.windows.shell import is_reparse_point_or_junction
 from cleanguard.utils.logging import get_logger
+from cleanguard.localization import tr
 
 logger = get_logger("windows.uninstaller")
 
@@ -112,6 +113,24 @@ class AppUninstallerManager:
 
         # Sort alphabetically by application name
         return sorted(list(apps.values()), key=lambda a: a.name.lower())
+
+    def is_app_installed(self, app: InstalledApp) -> bool:
+        """
+        Whether the app's Uninstall registry entry still exists.
+        Folders of an installed application are live data, not leftovers.
+        """
+        prefix = f"{app.registry_hive}_"
+        subkey_name = app.id[len(prefix):] if app.id.startswith(prefix) else ""
+        for hive, subkey_path, hive_tag in UNINSTALL_REG_KEYS:
+            if hive_tag != app.registry_hive or not subkey_name:
+                continue
+            try:
+                with winreg.OpenKey(hive, f"{subkey_path}\\{subkey_name}", 0, winreg.KEY_READ):
+                    return True
+            except OSError:
+                return False
+        # Unknown origin: be conservative and treat it as still installed.
+        return True
 
     def _parse_app_key(self, app_key: Any, subkey_name: str, hive_tag: str) -> Optional[InstalledApp]:
         """Extract metadata from an individual application registry subkey."""
@@ -265,7 +284,7 @@ class AppUninstallerManager:
         Launches non-blockingly so the GUI remains responsive.
         """
         if not app.uninstall_string:
-            return False, "No uninstall string available for this application."
+            return False, tr("uninst_no_cmd", "Ushbu dastur uchun o'chirish buyrug'i mavjud emas.")
 
         try:
             # The command line comes from the registry. Run it directly (no cmd.exe)
@@ -273,8 +292,8 @@ class AppUninstallerManager:
             cmd = os.path.expandvars(app.uninstall_string.strip())
             subprocess.Popen(cmd, shell=False)
             if "msiexec" in cmd.lower():
-                return True, "Launched Windows Installer uninstallation."
-            return True, f"Launched uninstaller for '{app.name}'."
+                return True, tr("uninst_msi_launched", "Windows Installer orqali o'chirish ishga tushirildi.")
+            return True, tr("uninst_launched", "'{name}' uchun o'chirish dasturi ishga tushirildi.", name=app.name)
         except Exception as ex:
             logger.error("Failed executing uninstaller for %s: %s", app.name, ex)
             return False, str(ex)

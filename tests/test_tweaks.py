@@ -2,14 +2,10 @@
 Tests for Windows Tweaks and Bloatware Manager.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from cleanguard.windows.tweaks import (
     TweaksManager,
-    PrivacyTweak,
     BloatwareApp,
-    BUILTIN_TWEAKS,
-    BUILTIN_BLOATWARE,
 )
 
 

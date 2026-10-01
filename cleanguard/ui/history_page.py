@@ -3,7 +3,6 @@ History Page: Historical audit records of all previous cleanup sessions.
 Features interactive session inspection (cleaned files list) and CSV/JSON export.
 """
 
-from typing import Optional
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -22,7 +21,7 @@ from PyQt5.QtCore import Qt
 from cleanguard.database.db import DatabaseManager
 from cleanguard.database.repositories import HistoryRepository
 from cleanguard.services.export_service import export_history_to_csv, export_history_to_json
-from cleanguard.localization import tr, get_localization
+from cleanguard.localization import tr
 from cleanguard.utils.formatting import format_bytes, format_timestamp, format_number
 
 

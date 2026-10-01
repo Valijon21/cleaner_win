@@ -3,9 +3,8 @@ CleanGuard Diagnostic Log Viewer Dialog.
 Interactive, color-coded, searchable real-time log inspector.
 """
 
-import os
 import logging
-from typing import List, Dict, Any
+from typing import Dict, Any
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -18,7 +17,6 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QFileDialog,
     QApplication,
-    QFrame,
     QMessageBox,
 )
 from PyQt5.QtGui import QFont, QTextCursor
@@ -27,7 +25,6 @@ from cleanguard.utils.logging import (
     get_memory_logs,
     clear_memory_logs,
     open_log_folder,
-    get_log_file_paths,
     get_logger,
 )
 from cleanguard.localization import tr

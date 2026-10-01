@@ -6,7 +6,6 @@ Compatible with Windows 7 SP1, 8, 8.1, 10, and 11.
 """
 
 import os
-import sys
 import csv
 import io
 import re
@@ -16,6 +15,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple, Dict, Any
 from cleanguard.core.contracts import RiskLevel
 from cleanguard.utils.logging import get_logger
+from cleanguard.localization import tr
 
 logger = get_logger("windows.startup")
 
@@ -519,10 +519,10 @@ class StartupManager:
         Supports Scheduled Tasks, Registry Run keys, and Startup folders.
         """
         if item.risk_level == RiskLevel.BLOCKED:
-            return False, "This is a critical Windows system item and cannot be disabled."
+            return False, tr("startup_critical", "Bu Windows tizimining muhim elementi, uni o'chirib bo'lmaydi.")
 
         if item.enabled == enabled:
-            return True, "No change required"
+            return True, tr("no_change_required", "O'zgartirish talab qilinmaydi")
 
         try:
             if item.location_type == "SCHEDULED_TASK":
@@ -550,7 +550,8 @@ class StartupManager:
             res = subprocess.run(cmd, capture_output=True, text=True, errors="ignore")
             if res.returncode == 0:
                 item.enabled = enabled
-                return True, f"Successfully {'enabled' if enabled else 'disabled'}"
+                return True, (tr("startup_enabled_ok", "Muvaffaqiyatli yoqildi") if enabled
+                             else tr("startup_disabled_ok", "Muvaffaqiyatli o'chirildi"))
             else:
                 err_msg = res.stderr.strip() or res.stdout.strip() or "schtasks command failed"
                 return False, err_msg
@@ -578,7 +579,7 @@ class StartupManager:
             # Synchronize with Windows StartupApproved
             self._set_approved_state(winreg.HKEY_CURRENT_USER, approved_key, item.name, False)
             item.enabled = False
-            return True, "Successfully disabled"
+            return True, tr("startup_disabled_ok", "Muvaffaqiyatli o'chirildi")
         else:
             # Restore to active Run key
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, subkey, 0, winreg.KEY_SET_VALUE) as rkey:
@@ -593,7 +594,7 @@ class StartupManager:
             # Synchronize with Windows StartupApproved
             self._set_approved_state(winreg.HKEY_CURRENT_USER, approved_key, item.name, True)
             item.enabled = True
-            return True, "Successfully enabled"
+            return True, tr("startup_enabled_ok", "Muvaffaqiyatli yoqildi")
 
     def _toggle_hklm_run(self, item: StartupItem, enabled: bool) -> Tuple[bool, str]:
         subkey = REG_HKLM_WOW64_RUN if item.location_type == "HKLM_WOW64_RUN" else REG_HKLM_RUN
@@ -615,7 +616,7 @@ class StartupManager:
 
                 self._set_approved_state(winreg.HKEY_LOCAL_MACHINE, approved_key, item.name, False)
                 item.enabled = False
-                return True, "Successfully disabled"
+                return True, tr("startup_disabled_ok", "Muvaffaqiyatli o'chirildi")
             else:
                 with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, subkey, 0, winreg.KEY_SET_VALUE) as rkey:
                     winreg.SetValueEx(rkey, item.name, 0, winreg.REG_SZ, item.command)
@@ -627,14 +628,14 @@ class StartupManager:
 
                 self._set_approved_state(winreg.HKEY_LOCAL_MACHINE, approved_key, item.name, True)
                 item.enabled = True
-                return True, "Successfully enabled"
+                return True, tr("startup_enabled_ok", "Muvaffaqiyatli yoqildi")
         except PermissionError:
-            return False, "Administrator privileges required to modify HKLM startup items."
+            return False, tr("startup_hklm_admin", "HKLM ishga tushirish elementlarini o'zgartirish uchun Administrator huquqi talab qilinadi.")
 
     def _toggle_folder_item(self, item: StartupItem, enabled: bool) -> Tuple[bool, str]:
         current_path = item.command
         if not os.path.exists(current_path):
-            return False, "File not found"
+            return False, tr("msg_file_not_found", "Fayl diskda topilmadi.")
 
         # Determine approved hive
         approved_hive = (
@@ -657,7 +658,7 @@ class StartupManager:
                 item.command = new_path
             self._set_approved_state(approved_hive, approved_key, clean_file_name, False)
             item.enabled = False
-            return True, "Successfully disabled"
+            return True, tr("startup_disabled_ok", "Muvaffaqiyatli o'chirildi")
         else:
             if current_path.endswith(".disabled"):
                 new_path = current_path[:-9]
@@ -665,7 +666,7 @@ class StartupManager:
                 item.command = new_path
             self._set_approved_state(approved_hive, approved_key, clean_file_name, True)
             item.enabled = True
-            return True, "Successfully enabled"
+            return True, tr("startup_enabled_ok", "Muvaffaqiyatli yoqildi")
 
     def _extract_executable_path(self, command: str) -> str:
         """Extract clean, environment-expanded file path from arbitrary command line string."""

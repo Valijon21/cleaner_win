@@ -280,3 +280,101 @@ def test_leftovers_do_not_match_unrelated_folders(tmp_path):
     found = sorted(it.name for it in mgr.find_leftovers("Git", publisher="The Git Development Community"))
     assert found == ["Git"]
     assert mgr.find_leftovers("Microsoft", publisher="Microsoft Corporation") == []
+
+
+# --- Follow-up hardening (single instance, boundary re-check, shutdown) -----
+
+def test_cleanup_gate_rejects_item_outside_scanner_roots(isolated_config, tmp_path):
+    allowed = tmp_path / "TempRoot"
+    allowed.mkdir()
+    outside = tmp_path / "Elsewhere"
+    outside.mkdir()
+    stray = outside / "old.tmp"
+    stray.write_text("x")
+    old = time.time() - 7 * 86400
+    os.utime(stray, (old, old))
+
+    engine = SafetyEngine(protected_registry=ProtectedPathRegistry(config_manager=isolated_config))
+    engine.risk_engine.smart_pyinstaller_enabled = False
+    item = _item(str(stray))
+    item.allowed_roots = [str(allowed)]
+
+    with patch("cleanguard.core.cleaner.executor.execute_deletion") as mock_delete:
+        summary = CleanupExecutor(safety_engine=engine).execute([item])
+
+    mock_delete.assert_not_called()
+    assert summary.item_results[0].status == CleanupStatus.SKIPPED
+    assert summary.item_results[0].error_code == ErrorCode.ACCESS_DENIED
+    assert stray.exists()
+
+
+def test_scanner_items_carry_allowed_roots(isolated_config, tmp_path):
+    from cleanguard.core.scanner.base import BaseScanner
+
+    root = tmp_path / "cache"
+    root.mkdir()
+    (root / "a.tmp").write_text("x")
+
+    class _Scanner(BaseScanner):
+        scanner_id = "t"
+        display_name = "t"
+        category = CleanCategory.TEMP_FILES
+
+        def get_allowed_roots(self):
+            return [str(root)]
+
+        def scan(self, cancel_token=None, progress_callback=None):
+            return self.safe_scan_directory(str(root))
+
+    engine = SafetyEngine(protected_registry=ProtectedPathRegistry(config_manager=isolated_config))
+    items = _Scanner(engine).scan()
+    assert items and items[0].allowed_roots == [str(root)]
+
+
+def test_single_instance_lock_is_exclusive(qapp, tmp_path):
+    from cleanguard.app.single_instance import SingleInstanceGuard
+
+    lock = str(tmp_path / "cg.lock")
+    first = SingleInstanceGuard(lock_path=lock, server_name="CleanGuardTest.First")
+    second = SingleInstanceGuard(lock_path=lock, server_name="CleanGuardTest.First")
+    assert first.try_acquire() is True
+    assert second.try_acquire() is False
+    first.release()
+    assert second.try_acquire() is True
+    second.release()
+
+
+def test_notify_without_running_instance_returns_false(qapp, tmp_path):
+    from cleanguard.app.single_instance import SingleInstanceGuard
+
+    guard = SingleInstanceGuard(lock_path=str(tmp_path / "cg.lock"), server_name="CleanGuardTest.Nobody")
+    assert guard.notify_running_instance(timeout_ms=200) is False
+
+
+def test_main_window_stops_threads_cooperatively_and_blocks_quit_when_busy(qapp):
+    from PyQt5.QtCore import QThread
+    from cleanguard.ui.main_window import MainWindow
+
+    window = MainWindow(enable_monitor=False)
+
+    class _Loop(QThread):
+        def run(self):
+            while not self.isInterruptionRequested():
+                self.msleep(10)
+
+    worker = _Loop(window)
+    worker.start()
+    with patch.object(QThread, "terminate") as mock_terminate:
+        window._shutdown_workers()
+    assert worker.isFinished()
+    mock_terminate.assert_not_called()
+
+    busy = MagicMock()
+    busy.isRunning.return_value = True
+    window.cleanup_worker = busy
+    with patch("cleanguard.ui.main_window.QMessageBox.warning") as mock_warn:
+        assert window._confirm_can_quit() is False
+    mock_warn.assert_called_once()
+    window.cleanup_worker = None
+    assert window._confirm_can_quit() is True
+    window.deleteLater()
